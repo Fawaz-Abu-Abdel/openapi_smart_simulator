@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Developer — OpenAPI Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', '"Fira Code"', '"Cascadia Code"', 'Menlo', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        't-bg': 'var(--bg-body)',
+                        't-panel': 'var(--bg-panel)',
+                        't-subtle': 'var(--bg-panel-subtle)',
+                        't-border': 'var(--border-main)',
+                        't-border-subtle': 'var(--border-subtle)',
+                        't-text': 'var(--text-primary)',
+                        't-muted': 'var(--text-muted)',
+                        't-dimmed': 'var(--text-dimmed)',
+                        't-faint': 'var(--text-faint)',
+                        't-accent': 'var(--accent-green)',
+                        't-cyan': 'var(--accent-cyan)',
+                        't-selected': 'var(--bg-selected)',
+                        't-active-lang': 'var(--bg-active-lang)',
+                    },
+                    animation: {
+                        blink: 'blink 1s step-end infinite',
+                    },
+                    keyframes: {
+                        blink: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #000000;
+            --bg-panel: #09090b;
+            --bg-panel-subtle: rgba(9, 9, 11, 0.5);
+            --border-main: #27272a;
+            --border-subtle: #18181b;
+            --text-primary: #d4d4d8;
+            --text-muted: #71717a;
+            --text-dimmed: #52525b;
+            --text-faint: #3f3f46;
+            --accent-green: #22c55e;
+            --accent-cyan: #22d3ee;
+            --bg-selected: #18181b;
+            --bg-active-lang: #052e16;
+            --scrollbar-thumb: #27272a;
+            --scrollbar-thumb-hover: #3f3f46;
+            --accent-glow: rgba(34, 197, 94, 0.2);
+        }
+
+        html.light {
+            --bg-body: #fafafa;
+            --bg-panel: #ffffff;
+            --bg-panel-subtle: rgba(244, 244, 245, 0.5);
+            --border-main: #e4e4e7;
+            --border-subtle: #f4f4f5;
+            --text-primary: #18181b;
+            --text-muted: #71717a;
+            --text-dimmed: #a1a1aa;
+            --text-faint: #d4d4d8;
+            --accent-green: #15803d;
+            --accent-cyan: #0369a1;
+            --bg-selected: #f4f4f5;
+            --bg-active-lang: #dcfce7;
+            --scrollbar-thumb: #d4d4d8;
+            --scrollbar-thumb-hover: #a1a1aa;
+            --accent-glow: rgba(21, 128, 61, 0.15);
+        }
+
+        body { background: var(--bg-body); color: var(--text-primary); transition: background 0.2s, color 0.2s; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+        ::selection { background: var(--bg-active-lang); color: var(--accent-green); }
+    </style>
+</head>
+<body class="bg-t-bg text-t-text font-mono h-full flex flex-col text-sm antialiased">
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         HEADER — Terminal Prompt Bar
+         ══════════════════════════════════════════════════════════════════════ -->
+    <header class="border-b border-t-border bg-t-panel shrink-0">
+        <div class="max-w-screen-2xl mx-auto px-4 h-10 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="text-t-dimmed select-none">$</span>
+                <span class="text-t-accent font-semibold tracking-tight" data-i18n="title">fawaz@infrastructure:~$ finger fawaz</span>
+                <span class="text-t-accent animate-blink select-none">█</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Navigation links -->
+                <a href="/" class="text-xs text-t-muted hover:text-t-accent transition-colors duration-75" data-i18n="navHome">Home</a>
+                <span class="text-t-faint select-none">│</span>
+                <a href="/console/" class="text-xs text-t-muted hover:text-t-accent transition-colors duration-75" data-i18n="navConsole">Console</a>
+                <span class="text-t-faint select-none">│</span>
+
+                <!-- Language Toggle -->
+                <div class="flex items-center border border-t-border rounded">
+                    <button id="lang-btn-en" onclick="setLanguage('en')" class="px-2 py-0.5 text-xs bg-t-active-lang text-t-accent border-r border-t-border transition-all duration-75">EN</button>
+                    <button id="lang-btn-ar" onclick="setLanguage('ar')" class="px-2 py-0.5 text-xs text-t-dimmed hover:text-t-text transition-all duration-75">عربي</button>
+                </div>
+                
+                <!-- Theme Toggle -->
+                <button id="theme-toggle" onclick="toggleTheme()" class="w-6 h-6 flex items-center justify-center rounded border border-t-border text-t-muted hover:text-t-accent transition-all duration-200" aria-label="Toggle theme">
+                    <!-- Moon (dark mode active) -->
+                    <svg id="icon-moon" class="w-3.5 h-3.5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></svg>
+                    <!-- Sun (light mode active) -->
+                    <svg id="icon-sun" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         MAIN CONTENT — Bento Grid Portfolio
+         ══════════════════════════════════════════════════════════════════════ -->
+    <main class="flex-grow overflow-y-auto p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Card 1: The Identity Prompt -->
+            <div class="lg:col-span-2 border border-t-border bg-t-panel p-5 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
+                        <span class="text-xs text-t-cyan font-bold" data-i18n="card1Header">SYS_IDENTITY_PROMPT</span>
+                        <span class="text-[10px] text-t-muted">ONLINE</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 items-start">
+                        <div class="w-16 h-16 shrink-0 border border-t-accent rounded flex items-center justify-center font-bold text-lg text-t-accent shadow-[0_0_8px_var(--accent-glow)] select-none">
+                            F.A.
+                        </div>
+                        <div class="space-y-1">
+                            <h2 class="text-base text-t-accent font-bold" data-i18n="name">Fawaz Abu Abdel</h2>
+                            <p class="text-xs text-t-text leading-relaxed" data-i18n="aboutText">
+                                Backend Software Engineer & Engineering Lead specializing in high-throughput, secure microservices, Identity & Access Management (IAM), SSO, and advanced database schema optimization. Driven by building production-grade backend systems and developer utilities.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t border-t-border-subtle pt-3 mt-4 flex items-center justify-between text-[11px] text-t-muted">
+                    <span data-i18n="statusFinger">finger: fawaz active</span>
+                    <span>ip: 127.0.0.1</span>
+                </div>
+            </div>
+
+            <!-- Card 2: The Stack Matrix -->
+            <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[220px]">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
+                        <span class="text-xs text-t-cyan font-bold">$ cat skills.json</span>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <span class="text-t-accent font-bold" data-i18n="stackBackend">Backend:</span>
+                            <span class="text-t-text ml-1">Go (Golang), Java (Spring Boot, Quarkus), Python (Django)</span>
+                        </div>
+                        <div>
+                            <span class="text-t-accent font-bold" data-i18n="stackDatabase">Database:</span>
+                            <span class="text-t-text ml-1">PostgreSQL, MySQL (Transaction Isolation level optimization)</span>
+                        </div>
+                        <div>
+                            <span class="text-t-accent font-bold" data-i18n="stackArchitecture">Architecture:</span>
+                            <span class="text-t-text ml-1">Microservices, Event-Driven, Identity Access Management (IAM, Keycloak)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-t-muted border-t border-t-border-subtle pt-2 mt-4 font-mono select-none">
+                    { "stack": "compiled", "status": "optimized" }
+                </div>
+            </div>
+
+            <!-- Card 3: Philosophy Card -->
+            <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
+                        <span class="text-xs text-t-cyan font-bold" data-i18n="card3Header">SYS_MISSION_STATEMENT</span>
+                    </div>
+                    <p class="text-xs text-t-text leading-relaxed italic" data-i18n="missionText">
+                        "As a backend engineer, I believe tools should be optimized, elegant, and solve actual developer friction. This simulator bridges the gap between raw OpenAPI specifications and dynamic client simulation, minimizing manual payload manipulation."
+                    </p>
+                </div>
+                <div class="text-[10px] text-t-accent mt-4 select-none">
+                    [ // ARCHITECTURAL_PHILOSOPHY ]
+                </div>
+            </div>
+
+            <!-- Card 4: Production Ledger -->
+            <div class="md:col-span-2 border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
+                        <span class="text-xs text-t-cyan font-bold" data-i18n="timelineHeader">PROD_EXPERIENCE_LEDGER</span>
+                        <span class="text-[10px] text-t-muted">v1.2.0</span>
+                    </div>
+                    <div class="space-y-4">
+                        <!-- Step 1 -->
+                        <div class="relative ps-6 border-s border-t-border-subtle space-y-1">
+                            <span class="absolute -start-1.5 top-1 w-3 h-3 rounded-full bg-t-accent border border-t-bg shadow-[0_0_6px_var(--accent-glow)]"></span>
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <h3 class="text-xs text-t-accent font-bold" data-i18n="expRole1">Backend Engineering Lead & Senior Software Engineer</h3>
+                                <span class="text-[10px] text-t-muted">2024 — PRESENT</span>
+                            </div>
+                            <p class="text-xs text-t-muted" data-i18n="expDesc1">
+                                Leading core backend microservices for health technology platforms and enterprise business solutions. Optimized data persistence layer strategies and decoupled critical payment workflows.
+                            </p>
+                            <div class="flex flex-wrap gap-2 pt-1.5">
+                                <span class="text-[9px] border border-t-border text-t-cyan px-1.5 py-0.5 rounded select-none font-bold" data-i18n="badgeLatency">[ LATENCY -30% ]</span>
+                                <span class="text-[9px] border border-t-border text-t-cyan px-1.5 py-0.5 rounded select-none font-bold" data-i18n="badgeDb">[ DB OPTIMIZED ]</span>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="relative ps-6 border-s border-t-border-subtle space-y-1">
+                            <span class="absolute -start-1.5 top-1 w-3 h-3 rounded-full bg-t-accent border border-t-bg"></span>
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <h3 class="text-xs text-t-accent font-bold" data-i18n="expRole2">Senior Infrastructure & Security Engineer</h3>
+                                <span class="text-[10px] text-t-muted">2021 — 2024</span>
+                            </div>
+                            <p class="text-xs text-t-muted" data-i18n="expDesc2">
+                                Managed full-stack IAM and SSO identity integrations using Keycloak and custom Java microservices. Refactored event queues and hardened Docker pipelines.
+                            </p>
+                            <div class="flex flex-wrap gap-2 pt-1.5">
+                                <span class="text-[9px] border border-t-border text-t-cyan px-1.5 py-0.5 rounded select-none font-bold" data-i18n="badgeAuth">[ AUTH SECURED ]</span>
+                                <span class="text-[9px] border border-t-border text-t-cyan px-1.5 py-0.5 rounded select-none font-bold" data-i18n="badgeDocker">[ CI/CD AUTOMATED ]</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5: System Interlink Footer -->
+            <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
+                        <span class="text-xs text-t-cyan font-bold" data-i18n="interlinkHeader">SYSTEM_INTERLINK</span>
+                    </div>
+                    <div class="flex flex-col gap-2.5">
+                        <a href="https://github.com" target="_blank" class="flex items-center justify-between text-xs border border-t-border hover:border-t-accent p-2 rounded hover:bg-t-selected/40 transition-colors duration-75 group">
+                            <span class="text-t-muted group-hover:text-t-accent transition-colors duration-75">GitHub</span>
+                            <span class="text-t-faint select-none">→</span>
+                        </a>
+                        <a href="https://linkedin.com" target="_blank" class="flex items-center justify-between text-xs border border-t-border hover:border-t-accent p-2 rounded hover:bg-t-selected/40 transition-colors duration-75 group">
+                            <span class="text-t-muted group-hover:text-t-accent transition-colors duration-75">LinkedIn</span>
+                            <span class="text-t-faint select-none">→</span>
+                        </a>
+                    </div>
+                </div>
+                <a href="/console/" class="w-full text-center border border-t-border hover:border-t-accent text-t-muted hover:text-t-accent py-2 text-xs font-bold transition-all duration-75 hover:shadow-[0_0_12px_var(--accent-glow)] active:scale-95 block mt-4" data-i18n="launchConsole">
+                    [ LAUNCH_CONSOLE ]
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-t-border bg-t-panel shrink-0 h-10 flex items-center">
+        <div class="max-w-screen-2xl mx-auto px-4 w-full flex items-center justify-between text-[11px] text-t-dimmed">
+            <span>© 2026 Fawaz Abu Abdel</span>
+            <span class="font-mono text-t-muted" id="footer-timestamp"></span>
+        </div>
+    </footer>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         SCRIPTING LAYER
+         ══════════════════════════════════════════════════════════════════════ -->
+    <script>
+        let currentLang = localStorage.getItem('sim-lang') || 'en';
+        let currentTheme = localStorage.getItem('sim-theme') || 'dark';
+
+        const i18n = {
+            en: {
+                title: "fawaz@infrastructure:~$ finger fawaz",
+                navHome: "Home",
+                navConsole: "Console",
+                card1Header: "SYS_IDENTITY_PROMPT",
+                name: "Fawaz Abu Abdel",
+                aboutText: "Backend Software Engineer & Engineering Lead specializing in high-throughput, secure microservices, Identity & Access Management (IAM), SSO, and advanced database schema optimization. Driven by building production-grade backend systems and developer utilities.",
+                statusFinger: "finger: fawaz active",
+                stackBackend: "Backend:",
+                stackDatabase: "Database:",
+                stackArchitecture: "Architecture:",
+                card3Header: "SYS_MISSION_STATEMENT",
+                missionText: "\"As a backend engineer, I believe tools should be optimized, elegant, and solve actual developer friction. This simulator bridges the gap between raw OpenAPI specifications and dynamic client simulation, minimizing manual payload manipulation.\"",
+                timelineHeader: "PROD_EXPERIENCE_LEDGER",
+                expRole1: "Backend Engineering Lead & Senior Software Engineer",
+                expDesc1: "Leading core backend microservices for health technology platforms and enterprise business solutions. Optimized data persistence layer strategies and decoupled critical payment workflows.",
+                badgeLatency: "[ LATENCY -30% ]",
+                badgeDb: "[ DB OPTIMIZED ]",
+                expRole2: "Senior Infrastructure & Security Engineer",
+                expDesc2: "Managed full-stack IAM and SSO identity integrations using Keycloak and custom Java microservices. Refactored event queues and hardened Docker pipelines.",
+                badgeAuth: "[ AUTH SECURED ]",
+                badgeDocker: "[ CI/CD AUTOMATED ]",
+                interlinkHeader: "SYSTEM_INTERLINK",
+                launchConsole: "[ LAUNCH_CONSOLE ]"
+            },
+            ar: {
+                title: "fawaz@infrastructure:~$ finger fawaz",
+                navHome: "الرئيسية",
+                navConsole: "وحدة التحكم",
+                card1Header: "توجيه_هوية_النظام",
+                name: "فواز أبو عبدل",
+                aboutText: "مهندس برمجيات واجهات خلفية (Backend) وقائد هندسي متخصص في بناء الخدمات المصغّرة عالية الإنتاجية والآمنة، وأنظمة إدارة الهوية والوصول (IAM)، وخدمات تسجيل الدخول الموحد (SSO)، وتحسين قواعد البيانات المتقدمة. شغوف ببناء أنظمة خلفية للإنتاج الفعلي وأدوات احترافية للمطورين.",
+                statusFinger: "finger: فواز نشط",
+                stackBackend: "تطوير الواجهة الخلفية:",
+                stackDatabase: "قواعد البيانات:",
+                stackArchitecture: "هيكلية النظام:",
+                card3Header: "بيان_مهمة_النظام",
+                missionText: "\"كمهندس واجهات خلفية، أؤمن أن الأدوات يجب أن تكون محسّنة، أنيقة، وتحل العقبات الحقيقية للمطورين. يسد هذا المحاكي الفجوة بين مواصفات OpenAPI الخام والمحاكاة التفاعلية، مما يقلل من الحاجة لمعالجة البيانات وتكوينها يدوياً.\"",
+                timelineHeader: "سجل_الخبرات_المهنية",
+                expRole1: "قائد هندسة الواجهات الخلفية وكبير مهندسي البرمجيات",
+                expDesc1: "قيادة الخدمات المصغّرة الخلفية الأساسية للمنصات التقنية الصحية وحلول الأعمال المؤسسية. تحسين استراتيجيات طبقات تخزين البيانات وفصل تدفقات الدفع الحيوية عن بعضها لضمان الاستقرار.",
+                badgeLatency: "[ زمن الاستجابة -30% ]",
+                badgeDb: "[ قاعدة بيانات محسّنة ]",
+                expRole2: "كبير مهندسي البنية التحتية والأنظمة الأمنية",
+                expDesc2: "إدارة وتكامل أنظمة الهوية والوصول (IAM) والدخول الموحد (SSO) بالكامل باستخدام Keycloak والخدمات المصغّرة بلغة Java. إعادة هيكلة طوابير الأحداث وتأمين مسارات النشر عبر Docker.",
+                badgeAuth: "[ مصادقة مؤمنة ]",
+                badgeDocker: "[ أتمتة مسارات CI/CD ]",
+                interlinkHeader: "ارتباط_النظام",
+                launchConsole: "[ تشغيل وحدة التحكم ]"
+            }
+        };
+
+        // ── Theme Switcher ────────────────────────────────────────────────
+        function setTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('sim-theme', theme);
+            const html = document.documentElement;
+
+            if (theme === 'light') {
+                html.classList.add('light');
+            } else {
+                html.classList.remove('light');
+            }
+
+            // Toggle icons
+            const sunIcon = document.getElementById('icon-sun');
+            const moonIcon = document.getElementById('icon-moon');
+            if (sunIcon && moonIcon) {
+                sunIcon.classList.toggle('hidden', theme === 'light');
+                moonIcon.classList.toggle('hidden', theme === 'dark');
+            }
+        }
+
+        function toggleTheme() {
+            setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        }
+
+        // ── Language Switcher ─────────────────────────────────────────────
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('sim-lang', lang);
+            document.documentElement.dir = (lang === 'ar' ? 'rtl' : 'ltr');
+            document.documentElement.lang = lang;
+
+            const btnEn = document.getElementById('lang-btn-en');
+            const btnAr = document.getElementById('lang-btn-ar');
+            if (lang === 'en') {
+                btnEn.className = "px-2 py-0.5 text-xs bg-t-active-lang text-t-accent border-r border-t-border transition-all duration-75";
+                btnAr.className = "px-2 py-0.5 text-xs text-t-dimmed hover:text-t-text transition-all duration-75";
+            } else {
+                btnAr.className = "px-2 py-0.5 text-xs bg-t-active-lang text-t-accent border-r border-t-border transition-all duration-75";
+                btnEn.className = "px-2 py-0.5 text-xs text-t-dimmed hover:text-t-text transition-all duration-75";
+            }
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang][key]) el.innerText = i18n[lang][key];
+            });
+        }
+
+        // ── Init ──────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply preferences on load
+            setTheme(currentTheme);
+            setLanguage(currentLang);
+
+            // Footer timestamp
+            document.getElementById('footer-timestamp').textContent =
+                new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+        });
+    </script>
+</body>
+</html>
