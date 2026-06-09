@@ -1,6 +1,7 @@
 import json
 import time
 import urllib.parse
+import re
 import requests
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -83,6 +84,51 @@ def resolve_refs(node, root_schema, resolved=None, memo=None):
         return [resolve_refs(item, root_schema, resolved, memo) for item in node]
     return node
 
+def resolve_schema_from_html(resp, base_url):
+    """
+    Attempts to detect if the HTML response is a login page or a Swagger/Redoc UI page,
+    and extracts the actual raw OpenAPI spec JSON/YAML URL.
+    """
+    html_content = resp.text
+    final_url = resp.url
+
+    # 1. Check if the final redirected URL points to a login/admin page
+    if any(term in final_url.lower() for term in ['/login', '/signin', '/admin/login']):
+        raise ValueError("The request redirected to a login or admin page. This endpoint requires authentication.")
+
+    # 2. Check if the HTML title suggests a login/authentication page
+    title_match = re.search(r'<title>(.*?)</title>', html_content, re.IGNORECASE)
+    if title_match:
+        title_text = title_match.group(1).lower()
+        if any(term in title_text for term in ['log in', 'login', 'sign in', 'signin', 'authorize', 'authentication']):
+            raise ValueError("The URL returned a login page. This endpoint requires authentication.")
+
+    # 3. Check for typical password inputs
+    if 'name="password"' in html_content or 'type="password"' in html_content:
+        raise ValueError("The URL returned a login page with password prompts. This endpoint requires authentication.")
+
+    # 4. Search for common Swagger UI or Redoc configuration patterns (e.g. url: "...")
+    patterns = [
+        r'url\s*:\s*[\'"]([^\'\"]+)[\'"]',
+        r'spec-url\s*=\s*[\'"]([^\'\"]+)[\'"]',
+        r'data-url\s*=\s*[\'"]([^\'\"]+)[\'"]',
+        r'SwaggerUIBundle\(\s*\{\s*url\s*:\s*[\'"]([^\'\"]+)[\'"]',
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, html_content, re.IGNORECASE)
+        if match:
+            extracted_url = match.group(1)
+            # Exclude asset paths
+            if not extracted_url.endswith(('.js', '.css', '.png', '.jpg', '.gif', '.ico')):
+                return urllib.parse.urljoin(base_url, extracted_url)
+
+    raise ValueError(
+        "The URL returned an HTML page instead of a raw OpenAPI JSON/YAML schema. "
+        "If this is a Swagger UI page, we could not auto-detect the schema URL."
+    )
+
+
 @csrf_exempt
 def parse_swagger(request):
     """
@@ -111,6 +157,19 @@ def parse_swagger(request):
     try:
         resp = session.get(swagger_url, timeout=15)
         resp.raise_for_status()
+        
+        content_type = resp.headers.get('content-type', '').lower()
+        # If the response appears to be HTML, try to resolve the raw schema URL from it
+        if 'text/html' in content_type or resp.text.strip().startswith('<!DOCTYPE') or resp.text.strip().startswith('<html'):
+            try:
+                real_schema_url = resolve_schema_from_html(resp, swagger_url)
+                resp = session.get(real_schema_url, timeout=15)
+                resp.raise_for_status()
+            except ValueError as val_err:
+                return JsonResponse({'error': f'Failed to fetch or parse Swagger URL: {str(val_err)}'}, status=400)
+            except Exception as fetch_err:
+                return JsonResponse({'error': f'Detected Swagger page but failed to fetch raw spec from {real_schema_url}: {str(fetch_err)}'}, status=400)
+
         try:
             schema = resp.json()
         except Exception as json_err:
