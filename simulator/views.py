@@ -111,7 +111,16 @@ def parse_swagger(request):
     try:
         resp = session.get(swagger_url, timeout=15)
         resp.raise_for_status()
-        schema = resp.json()
+        try:
+            schema = resp.json()
+        except Exception as json_err:
+            try:
+                import yaml
+                schema = yaml.safe_load(resp.text)
+                if not isinstance(schema, dict):
+                    raise ValueError("Parsed content is not a dictionary")
+            except Exception as yaml_err:
+                raise ValueError(f"Invalid JSON/YAML schema. JSON error: {str(json_err)}. YAML error: {str(yaml_err)}")
     except Exception as e:
         return JsonResponse({'error': f'Failed to fetch or parse Swagger URL: {str(e)}'}, status=400)
         
