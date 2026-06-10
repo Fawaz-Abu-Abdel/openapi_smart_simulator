@@ -14,7 +14,7 @@ class ScannedHistory(models.Model):
         return f"{self.title} ({self.url})"
 
 class SiteStats(models.Model):
-    total_visitors = models.PositiveIntegerField(default=0)
+    total_visitors = models.PositiveIntegerField(default=290)
     total_requests_made = models.PositiveIntegerField(default=0)
     
     @classmethod

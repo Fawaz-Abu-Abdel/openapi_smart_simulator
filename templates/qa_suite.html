@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI QA Automation Suite — OpenAPI Simulator</title>
+    <meta name="description" content="AI-powered QA automation suite for OpenAPI specifications. Generate test plans, run automated tests, and compile professional reports.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Outfit"', '-apple-system', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', '"Fira Code"', 'Menlo', 'monospace'],
+                    },
+                    colors: {
+                        't-bg': 'var(--bg-body)',
+                        't-panel': 'var(--bg-panel)',
+                        't-subtle': 'var(--bg-panel-subtle)',
+                        't-border': 'var(--border-main)',
+                        't-border-subtle': 'var(--border-subtle)',
+                        't-text': 'var(--text-primary)',
+                        't-muted': 'var(--text-muted)',
+                        't-dimmed': 'var(--text-dimmed)',
+                        't-faint': 'var(--text-faint)',
+                        't-accent': 'var(--accent-green)',
+                        't-cyan': 'var(--accent-cyan)',
+                        't-selected': 'var(--bg-selected)',
+                        't-active-lang': 'var(--bg-active-lang)',
+                    },
+                    animation: {
+                        blink: 'blink 1s step-end infinite',
+                        'pulse-slow': 'pulse 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        blink: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-body: #050507;
+            --bg-panel: #09090c;
+            --bg-panel-subtle: rgba(9,9,12,0.65);
+            --border-main: #202025;
+            --border-subtle: #141416;
+            --text-primary: #e4e4e7;
+            --text-muted: #8c8c9a;
+            --text-dimmed: #5c5c64;
+            --text-faint: #34343a;
+            --accent-green: #10b981;
+            --accent-cyan: #06b6d4;
+            --bg-selected: #16161c;
+            --bg-active-lang: #064e3b;
+            --scrollbar-thumb: #222227;
+            --scrollbar-thumb-hover: #34343c;
+            --accent-glow: rgba(6,182,212,0.15);
+        }
+        html.light {
+            --bg-body: #f7f9fa;
+            --bg-panel: #ffffff;
+            --bg-panel-subtle: rgba(245,247,248,0.65);
+            --border-main: #e2e8f0;
+            --border-subtle: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-muted: #64748b;
+            --text-dimmed: #94a3b8;
+            --text-faint: #cbd5e1;
+            --accent-green: #059669;
+            --accent-cyan: #0284c7;
+            --bg-selected: #f1f5f9;
+            --bg-active-lang: #d1fae5;
+            --scrollbar-thumb: #cbd5e1;
+            --scrollbar-thumb-hover: #94a3b8;
+            --accent-glow: rgba(2,132,199,0.1);
+        }
+        body { background: var(--bg-body); color: var(--text-primary); transition: background 0.3s, color 0.3s; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+        ::selection { background: var(--bg-active-lang); color: var(--accent-green); }
+        .glassmorphism { backdrop-filter: blur(12px); background: var(--bg-panel-subtle); border: 1px solid var(--border-main); }
+        .markdown-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; color: var(--text-primary); }
+        .markdown-body h1 { font-size:1.25rem; font-weight:700; margin-top:1.25rem; margin-bottom:0.5rem; color:var(--accent-cyan); border-bottom:1px solid var(--border-main); padding-bottom:0.25rem; }
+        .markdown-body h2 { font-size:1rem; font-weight:600; margin-top:1rem; margin-bottom:0.4rem; color:var(--text-primary); border-bottom:1px solid var(--border-subtle); padding-bottom:0.2rem; }
+        .markdown-body h3 { font-size:0.9rem; font-weight:600; margin-top:0.8rem; margin-bottom:0.3rem; color:var(--text-primary); }
+        .markdown-body p { margin-bottom:0.5rem; line-height:1.5; color:var(--text-primary); font-size:12px; }
+        .markdown-body ul { list-style-type:disc; padding-left:1.2rem; margin-bottom:0.5rem; font-size:12px; }
+        .markdown-body li { margin-bottom:0.2rem; }
+        .markdown-body code { font-family:monospace; background:var(--bg-selected); padding:0.1rem 0.25rem; border-radius:3px; font-size:0.9em; color:var(--accent-green); }
+        .markdown-body pre { background:var(--bg-panel); padding:0.5rem; border-radius:6px; overflow-x:auto; border:1px solid var(--border-main); margin-bottom:0.5rem; }
+        .markdown-body pre code { background:transparent; padding:0; color:inherit; }
+        .markdown-body table { width:100%; border-collapse:collapse; margin-bottom:0.5rem; font-size:11px; }
+        .markdown-body th, .markdown-body td { border:1px solid var(--border-main); padding:0.3rem; text-align:left; }
+        .markdown-body th { background:var(--bg-selected); font-weight:bold; }
+        /* Mobile tabs */
+        .mobile-tab-btn { transition: all 0.2s; }
+        .mobile-tab-btn.active { background: var(--bg-active-lang); color: var(--accent-green); border-color: var(--accent-green); }
+        /* Layout: proper viewport fill */
+        .qa-workspace { height: calc(100vh - 112px); }
+        @media (max-width: 1024px) { .qa-workspace { height: auto; } }
+    </style>
+</head>
+<body class="bg-t-bg text-t-text font-sans h-full flex flex-col text-sm antialiased">
+
+    <!-- HEADER -->
+    <header class="border-b border-t-border bg-t-panel shrink-0">
+        <div class="max-w-screen-2xl mx-auto px-4 h-12 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+                <span class="text-t-dimmed select-none hidden sm:inline">$</span>
+                <span class="text-t-accent font-bold tracking-wider uppercase text-xs truncate">user@ai-qa-suite<span class="text-t-dimmed">:</span><span class="text-t-cyan">~</span><span class="text-t-dimmed">$</span> openapi-qa-engine</span>
+                <span class="text-t-accent animate-blink select-none text-xs hidden sm:inline">█</span>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <nav class="hidden sm:flex items-center gap-3 text-xs">
+                    <a href="/" class="text-t-muted hover:text-t-accent transition-colors py-1 px-1.5">Home</a>
+                    <span class="text-t-faint select-none">|</span>
+                    <a href="/console/" class="text-t-muted hover:text-t-accent transition-colors py-1 px-1.5">API Playground</a>
+                    <span class="text-t-faint select-none">|</span>
+                    <a href="/console/qa/" class="text-t-accent bg-t-active-lang/40 rounded border border-t-accent/30 font-semibold py-1 px-2">QA Suite</a>
+                    <span class="text-t-faint select-none">|</span>
+                    <a href="/about/" class="text-t-muted hover:text-t-accent transition-colors py-1 px-1.5">About</a>
+                </nav>
+                <span class="text-t-faint select-none hidden sm:inline">│</span>
+                <!-- Theme toggle -->
+                <button id="theme-toggle" onclick="toggleTheme()" class="w-6 h-6 flex items-center justify-center rounded border border-t-border text-t-muted hover:text-t-accent transition-all duration-200" aria-label="Toggle theme">
+                    <svg id="icon-moon" class="w-3.5 h-3.5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"/></svg>
+                    <svg id="icon-sun" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"/></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- SCHEMA URL BAR -->
+    <div class="border-b border-t-border bg-t-subtle shrink-0">
+        <div class="max-w-screen-2xl mx-auto px-4">
+            <form id="url-loader-form" class="flex items-center gap-3 h-12">
+                <span class="text-t-dimmed text-xs shrink-0 select-none font-mono hidden sm:inline">openapi:</span>
+                <input
+                    type="url" id="swagger-url-input" required
+                    placeholder="https://petstore.swagger.io/v2/swagger.json"
+                    class="flex-1 bg-transparent border-b border-t-border text-t-accent placeholder-t-faint py-1 text-xs sm:text-sm focus:outline-none focus:border-t-accent transition-colors duration-100 font-mono min-w-0"
+                >
+                <button type="submit" id="fetch-btn" class="shrink-0 border border-t-border hover:border-t-accent text-t-muted hover:text-t-accent px-3 py-1.5 rounded text-xs transition-all hover:shadow-[0_0_8px_var(--accent-glow)] font-mono whitespace-nowrap">[ LOAD ]</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MOBILE TABS (shown only on small screens) -->
+    <div class="lg:hidden border-b border-t-border bg-t-panel shrink-0 flex text-[11px] font-semibold">
+        <button class="mobile-tab-btn active flex-1 py-2 border-r border-t-border text-center" onclick="switchMobileTab('endpoints')" id="mtab-endpoints">Endpoints</button>
+        <button class="mobile-tab-btn flex-1 py-2 border-r border-t-border text-center text-t-muted" onclick="switchMobileTab('config')" id="mtab-config">Config</button>
+        <button class="mobile-tab-btn flex-1 py-2 text-center text-t-muted" onclick="switchMobileTab('runner')" id="mtab-runner">Runner</button>
+    </div>
+
+    <!-- MAIN BENTO WORKSPACE -->
+    <main class="flex-1 overflow-hidden">
+        <div class="max-w-screen-2xl mx-auto h-full flex flex-col lg:flex-row lg:divide-x lg:divide-t-border">
+
+            <!-- ══ COLUMN 1: ENDPOINTS TREE ══ -->
+            <aside id="panel-endpoints" class="hidden lg:flex flex-col lg:w-72 xl:w-80 shrink-0 border-b lg:border-b-0 overflow-hidden" style="height: calc(100vh - 112px);">
+                <!-- Auth Status Card -->
+                <div id="auth-status-card" class="p-3 border-b border-t-border bg-t-panel/30 shrink-0">
+                    <div class="text-[10px] uppercase tracking-wider text-t-dimmed font-bold mb-2 flex items-center gap-1.5">
+                        <svg class="w-3 h-3 text-t-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        Auth Detection
+                    </div>
+                    <div id="auth-status-content" class="text-[11px] text-t-faint italic">Load a schema to detect auth...</div>
+                </div>
+
+                <!-- History -->
+                <div class="px-3 py-2 border-b border-t-border bg-t-panel/10 shrink-0">
+                    <div class="text-[9px] text-t-dimmed uppercase tracking-wider mb-1.5 font-bold">History</div>
+                    <div class="max-h-16 overflow-y-auto space-y-0.5" id="history-container">
+                        {% for item in history %}
+                        <button type="button" onclick="loadHistoryUrl('{{ item.url }}')"
+                            class="w-full text-left text-[10px] text-t-muted hover:text-t-accent truncate transition-colors py-0.5 font-mono"
+                            title="{{ item.url }}">
+                            <span class="text-t-faint select-none">→</span> {{ item.title }}
+                        </button>
+                        {% empty %}
+                        <div class="text-[10px] text-t-faint italic">no history</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Endpoints Header -->
+                <div class="px-4 h-8 flex items-center justify-between border-b border-t-border bg-t-panel/20 shrink-0 select-none">
+                    <span class="text-[10px] text-t-muted uppercase tracking-wider font-bold">Spec Endpoints</span>
+                    <span id="endpoint-count" class="text-[10px] text-t-faint bg-t-border px-1.5 py-0.2 rounded font-bold">0</span>
+                </div>
+                <!-- Search -->
+                <div class="px-3 py-1.5 border-b border-t-border-subtle shrink-0">
+                    <input type="text" id="endpoint-search" placeholder="grep endpoint..."
+                        class="w-full bg-transparent border-b border-t-border text-xs text-t-text placeholder-t-faint py-0.5 focus:outline-none focus:border-t-cyan font-mono">
+                </div>
+                <!-- Tree -->
+                <div class="flex-1 overflow-y-auto px-3 py-2" id="endpoint-tree-container">
+                    <div class="text-xs text-t-faint italic py-8 text-center">awaiting schema URL...</div>
+                </div>
+            </aside>
+
+            <!-- ══ COLUMN 2: PLANNER CONFIG ══ -->
+            <section id="panel-config" class="hidden lg:flex flex-col flex-1 min-w-0 border-b lg:border-b-0 overflow-hidden" style="height: calc(100vh - 112px);">
+                <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0 bg-t-panel/20 select-none">
+                    <span class="text-[10px] text-t-cyan uppercase tracking-wider font-bold">AI Planner Configuration</span>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+
+                    <!-- Select Test Types -->
+                    <div class="border border-t-border bg-t-panel/40 rounded-xl p-3.5 space-y-3 glassmorphism shadow-md">
+                        <div class="text-xs text-t-text font-bold uppercase tracking-wider flex items-center gap-1.5 select-none">
+                            <svg class="w-4 h-4 text-t-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            1. Select Test Types
+                        </div>
+                        <div class="grid grid-cols-1 gap-2 pt-1">
+                            <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                <input type="checkbox" name="qa-test-type" value="Normal Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                <div><div class="text-xs font-semibold text-t-text">Normal Test</div><div class="text-[10px] text-t-muted">Verify endpoints succeed (200/201) under valid payloads.</div></div>
+                            </label>
+                            <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                <input type="checkbox" name="qa-test-type" value="Authentication Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                <div><div class="text-xs font-semibold text-t-text">Authentication Test</div><div class="text-[10px] text-t-muted">Verify private endpoints correctly block (401/403) missing credentials.</div></div>
+                            </label>
+                            <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                <input type="checkbox" name="qa-test-type" value="Responses Expectations Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                <div><div class="text-xs font-semibold text-t-text">Responses Expectations Test</div><div class="text-[10px] text-t-muted">Fuzz endpoints with bad types, empty bodies. Verify validation checks.</div></div>
+                            </label>
+                            <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                <input type="checkbox" name="qa-test-type" value="Security &amp; Injection Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                <div><div class="text-xs font-semibold text-t-text">Security &amp; Injection Test</div><div class="text-[10px] text-t-muted">Inject SQLi / XSS payloads into string inputs to check filtering.</div></div>
+                            </label>
+                            <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                <input type="checkbox" name="qa-test-type" value="Performance/Latency Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                <div><div class="text-xs font-semibold text-t-text">Performance/Latency Test</div><div class="text-[10px] text-t-muted">Stress test response times under fast request bursts.</div></div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Generate Button -->
+                    <button type="button" id="qa-generate-plan-btn" onclick="generateAutomationTestPlan()"
+                        class="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold tracking-wide text-white transition-all border border-t-cyan/30 hover:shadow-[0_0_15px_rgba(6,182,212,0.25)]"
+                        style="background:linear-gradient(135deg,#0284c7,#0891b2);">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                        Generate AI Test Plan
+                    </button>
+
+                    <!-- Test Plan Output -->
+                    <div id="qa-test-plan-container" class="hidden border border-t-border bg-t-panel/40 rounded-xl p-3.5 space-y-3 glassmorphism">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs text-t-text font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-t-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2h-2"/></svg>
+                                2. Generated Steps
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="qa-center-run-btn" onclick="runSuiteOrPromptAuth()" disabled
+                                    class="flex items-center gap-1 px-2 py-0.5 rounded border border-t-accent/30 hover:border-t-accent text-t-accent hover:shadow-[0_0_8px_var(--accent-glow)] text-[10px] font-bold bg-t-panel transition-all disabled:opacity-30 disabled:cursor-not-allowed">
+                                    <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+                                    Run Suite
+                                </button>
+                                <span id="qa-plan-step-count" class="text-[10px] text-t-cyan bg-t-cyan/10 px-2 py-0.5 rounded-full border border-t-cyan/20 font-bold">0 Steps</span>
+                            </div>
+                        </div>
+                        <div class="text-[11px] text-t-muted italic leading-relaxed" id="qa-plan-summary"></div>
+                        <div class="space-y-2.5 border border-t-border-subtle rounded-lg p-2 bg-t-panel/60 max-h-96 overflow-y-auto" id="qa-plan-steps-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══ COLUMN 3: RUNNER ══ -->
+            <section id="panel-runner" class="hidden lg:flex flex-col w-full lg:w-96 xl:w-[420px] shrink-0 overflow-hidden" style="height: calc(100vh - 112px);">
+                <!-- Runner Header -->
+                <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0 bg-t-panel/30">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-t-cyan animate-pulse"></span>
+                        <span class="text-[10px] text-t-cyan uppercase tracking-wider font-bold">Test Execution Runner</span>
+                    </div>
+                    <div class="flex border border-t-border rounded overflow-hidden text-[9px] font-semibold bg-t-panel">
+                        <button id="qa-tab-btn-console" onclick="setQaRightTab('console')" class="px-2.5 py-0.5 bg-t-active-lang text-t-accent border-r border-t-border transition-all">Console</button>
+                        <button id="qa-tab-btn-report" onclick="setQaRightTab('report')" disabled class="px-2.5 py-0.5 text-t-dimmed hover:text-t-text transition-all disabled:opacity-30 disabled:cursor-not-allowed">Report</button>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-4 border-b border-t-border text-center bg-t-panel/60 shrink-0">
+                    <div class="py-2 border-e border-t-border">
+                        <div class="text-[9px] text-t-muted uppercase tracking-wider">Total</div>
+                        <div class="text-xs font-bold text-t-text" id="metric-total">0</div>
+                    </div>
+                    <div class="py-2 border-e border-t-border">
+                        <div class="text-[9px] text-t-muted uppercase tracking-wider">Passed</div>
+                        <div class="text-xs font-bold text-t-accent" id="metric-passed">0</div>
+                    </div>
+                    <div class="py-2 border-e border-t-border">
+                        <div class="text-[9px] text-t-muted uppercase tracking-wider">Failed</div>
+                        <div class="text-xs font-bold text-red-500" id="metric-failed">0</div>
+                    </div>
+                    <div class="py-2">
+                        <div class="text-[9px] text-t-muted uppercase tracking-wider">Rate</div>
+                        <div class="text-xs font-bold text-t-cyan" id="metric-rate">0%</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-t-border h-1 relative overflow-hidden shrink-0">
+                    <div id="qa-progress-bar" class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-t-cyan to-t-accent transition-all duration-200" style="width:0%;"></div>
+                </div>
+
+                <!-- Console Tab -->
+                <div id="qa-tab-content-console" class="flex-1 flex flex-col overflow-hidden">
+                    <div class="flex-1 overflow-y-auto bg-t-panel p-3 font-mono text-[10px] leading-relaxed select-text space-y-1" id="qa-runner-terminal">
+                        <span class="text-t-faint">// Load an OpenAPI schema to begin...</span>
+                    </div>
+                    <div class="p-3 border-t border-t-border bg-t-subtle flex items-center justify-between shrink-0 gap-2">
+                        <span class="text-[10px] text-t-dimmed font-mono truncate" id="qa-run-status">Awaiting Test Plan</span>
+                        <button id="qa-run-suite-btn" onclick="runSuiteOrPromptAuth()" disabled
+                            class="shrink-0 flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-t-panel border-t-accent/30 hover:border-t-accent hover:shadow-[0_0_10px_var(--accent-glow)] text-t-accent">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+                            Run Suite
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Report Tab -->
+                <div id="qa-tab-content-report" class="hidden flex-1 flex flex-col overflow-hidden">
+                    <div class="flex-1 overflow-y-auto bg-t-panel p-4 text-xs leading-relaxed select-text space-y-4" id="qa-report-viewer"></div>
+                    <div class="p-3 border-t border-t-border bg-t-subtle flex items-center justify-end gap-2 shrink-0">
+                        <button onclick="copyQaReportMarkdown()" class="border border-t-border hover:border-t-cyan px-3 py-1.5 rounded text-[10px] text-t-muted hover:text-t-cyan transition-colors uppercase tracking-wider font-semibold">Copy MD</button>
+                        <button onclick="downloadQaReportMarkdown()" class="border border-t-border hover:border-t-accent px-3 py-1.5 rounded text-[10px] text-t-muted hover:text-t-accent transition-colors uppercase tracking-wider font-semibold">Download MD</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         SMART AUTH CREDENTIALS MODAL
+         Populated dynamically with AI-detected field names
+         ══════════════════════════════════════════════════════════════ -->
+    <div id="qa-auth-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center hidden">
+        <div class="border border-t-border bg-t-panel rounded-2xl w-[400px] max-w-[95vw] p-5 shadow-2xl glassmorphism">
+            <!-- Header -->
+            <div class="flex items-center gap-2 mb-1">
+                <svg class="w-4 h-4 text-t-cyan shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364.364l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-t-cyan">AI Auth Detection</h3>
+            </div>
+            <!-- AI-populated description -->
+            <p class="text-[11px] text-t-muted leading-relaxed mb-4 mt-2 p-2 bg-t-selected/40 rounded-lg border border-t-border-subtle" id="auth-modal-description">
+                Analyzing API schema for authentication requirements...
+            </p>
+
+            <!-- Dynamic credential fields (populated by JS) -->
+            <div id="auth-modal-fields" class="space-y-3"></div>
+
+            <!-- Token fetch status -->
+            <div id="auth-fetch-status" class="hidden mt-3 p-2 rounded-lg bg-t-selected/60 border border-t-border-subtle">
+                <div class="flex items-center gap-2 text-[11px]">
+                    <svg class="w-3.5 h-3.5 animate-spin text-t-cyan shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    <span class="text-t-muted font-mono" id="auth-fetch-msg">Authenticating...</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 mt-5 pt-3 border-t border-t-border/50">
+                <button onclick="closeQaAuthDialog()" class="text-xs text-t-muted hover:text-t-text px-3 py-1.5 transition-colors">Cancel</button>
+                <button onclick="submitAuthAndRun()" id="auth-submit-btn"
+                    class="bg-t-cyan/20 border border-t-cyan/50 text-t-cyan hover:border-t-cyan px-4 py-1.5 rounded text-xs font-bold transition-all shadow-[0_0_8px_rgba(6,182,212,0.1)]">
+                    Authenticate &amp; Run
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING OVERLAY -->
+    <div id="loader-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="flex flex-col items-center gap-3">
+            <svg class="w-8 h-8 animate-spin text-t-cyan" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <p class="text-t-cyan text-xs font-mono" id="loader-msg">fetching specifications...</p>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         CORE JAVASCRIPT ENGINE
+         ══════════════════════════════════════════════════════════════ -->
+    <script>
+        // ── State ─────────────────────────────────────────────────────────
+        let currentApiSpec = null;
+        let generatedTestPlan = null;
+        let executionResults = [];
+        let qaReportMarkdown = "";
+        let detectedAuthConfig = null;   // AI-detected auth info
+        let activeAuthToken = null;       // Obtained auth token (bearer) or credentials
+
+        // ── Theme ─────────────────────────────────────────────────────────
+        function toggleTheme() {
+            const html = document.documentElement;
+            html.classList.toggle('light');
+            const isLight = html.classList.contains('light');
+            document.getElementById('icon-moon').classList.toggle('hidden', isLight);
+            document.getElementById('icon-sun').classList.toggle('hidden', !isLight);
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+        const storedTheme = localStorage.getItem('theme');
+        if (storedTheme === 'light') {
+            document.documentElement.classList.add('light');
+            document.getElementById('icon-moon').classList.remove('hidden');
+            document.getElementById('icon-sun').classList.add('hidden');
+        }
+
+        // ── Mobile Tabs ───────────────────────────────────────────────────
+        function switchMobileTab(tab) {
+            const panels = { endpoints: 'panel-endpoints', config: 'panel-config', runner: 'panel-runner' };
+            const btns = { endpoints: 'mtab-endpoints', config: 'mtab-config', runner: 'mtab-runner' };
+            Object.entries(panels).forEach(([key, id]) => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', key !== tab);
+            });
+            Object.entries(btns).forEach(([key, id]) => {
+                const btn = document.getElementById(id);
+                if (btn) {
+                    btn.classList.toggle('active', key === tab);
+                    btn.classList.toggle('text-t-muted', key !== tab);
+                }
+            });
+        }
+
+        // ── Loader ────────────────────────────────────────────────────────
+        function showLoader(show, message = "fetching specifications...") {
+            document.getElementById('loader-msg').textContent = message;
+            document.getElementById('loader-overlay').classList.toggle('hidden', !show);
+        }
+
+        function setQaRunButtonsDisabled(disabled) {
+            ['qa-run-suite-btn', 'qa-center-run-btn'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = disabled;
+            });
+        }
+
+        // ── Schema Load ────────────────────────────────────────────────────
+        document.getElementById('url-loader-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const url = document.getElementById('swagger-url-input').value.trim();
+            if (!url) return;
+
+            showLoader(true, "fetching specifications...");
+            try {
+                const response = await fetch('/parse-swagger/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({swagger_url: url})
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Failed to parse specification.');
+
+                currentApiSpec = data;
+                detectedAuthConfig = null;
+                activeAuthToken = null;
+                generatedTestPlan = null;
+                executionResults = [];
+                qaReportMarkdown = "";
+
+                const planContainer = document.getElementById('qa-test-plan-container');
+                if (planContainer) planContainer.classList.add('hidden');
+                setQaRunButtonsDisabled(true);
+
+                const repTab = document.getElementById('qa-tab-btn-report');
+                if (repTab) { repTab.disabled = true; repTab.classList.add('opacity-30', 'cursor-not-allowed'); }
+
+                document.getElementById('qa-run-status').textContent = "Awaiting Test Plan";
+                logToQaTerminal('clear');
+                renderEndpointTree(currentApiSpec);
+                logToQaTerminal('info', `[READY] Loaded: "${currentApiSpec.title}". Analyzing auth...`);
+
+                // ── Auto-detect auth from schema ──────────────────────────
+                showAuthStatus('analyzing');
+                analyzeSchemaAuth();
+
+            } catch (err) {
+                logToQaTerminal('error', `Failed to load schema: ${err.message}`);
+                showAuthStatus('error', err.message);
+            } finally {
+                showLoader(false);
+            }
+        });
+
+        async function loadHistoryUrl(url) {
+            document.getElementById('swagger-url-input').value = url;
+            document.getElementById('url-loader-form').requestSubmit();
+        }
+
+        // ── AI Auth Detection ─────────────────────────────────────────────
+        async function analyzeSchemaAuth() {
+            try {
+                showLoader(true, "AI analyzing auth scheme...");
+                const resp = await fetch('/analyze-auth/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        endpoints: currentApiSpec.endpoints,
+                        raw_schema: currentApiSpec.raw_schema || {}
+                    })
+                });
+                const data = await resp.json();
+                detectedAuthConfig = data;
+
+                console.log('[Auth Detection]', data);
+                logToQaTerminal('info', `[AUTH] ${data.description || 'Auth analysis complete.'}`);
+
+                if (data.auth_detected && data.auth_type !== 'none') {
+                    showAuthStatus('detected', data);
+                } else {
+                    showAuthStatus('none', data);
+                }
+            } catch (err) {
+                console.error('Auth analysis failed:', err);
+                logToQaTerminal('warning', `[AUTH] Analysis failed: ${err.message}. Will prompt if needed.`);
+                showAuthStatus('error', err.message);
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        function showAuthStatus(state, data = null) {
+            const card = document.getElementById('auth-status-content');
+            if (state === 'analyzing') {
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 text-t-muted">
+                        <svg class="w-3 h-3 animate-spin text-t-cyan" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                        <span class="font-mono">AI scanning schema...</span>
+                    </div>`;
+            } else if (state === 'detected') {
+                const typeColor = data.auth_type === 'bearer' ? 'text-t-cyan' : data.auth_type === 'apikey' ? 'text-amber-500' : 'text-purple-400';
+                card.innerHTML = `
+                    <div class="space-y-1.5">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-t-accent"></span>
+                            <span class="font-semibold ${typeColor} uppercase text-[10px]">${data.auth_type} auth detected</span>
+                        </div>
+                        <p class="text-t-muted leading-relaxed">${data.description || ''}</p>
+                        ${data.token_endpoint ? `<p class="font-mono text-t-accent text-[10px]">Token endpoint: ${data.token_method || 'POST'} ${data.token_endpoint}</p>` : ''}
+                        <button onclick="openQaAuthDialog()" class="mt-1 text-[10px] text-t-cyan border border-t-cyan/30 px-2 py-0.5 rounded hover:border-t-cyan transition-colors">Configure Credentials →</button>
+                    </div>`;
+            } else if (state === 'none') {
+                card.innerHTML = `<div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-t-faint"></span><span class="text-t-dimmed">No auth required (public API)</span></div>`;
+            } else if (state === 'authenticated') {
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-t-accent animate-pulse"></span>
+                            <span class="font-semibold text-t-accent text-[10px]">AUTHENTICATED</span>
+                        </div>
+                        <p class="font-mono text-[10px] text-t-muted truncate">Token: ${activeAuthToken ? activeAuthToken.slice(0, 30) + '…' : 'set'}</p>
+                        <button onclick="openQaAuthDialog()" class="text-[10px] text-t-dimmed hover:text-t-muted transition-colors">Re-authenticate</button>
+                    </div>`;
+            } else {
+                card.innerHTML = `<div class="text-t-dimmed">${data || 'Analysis unavailable.'}</div>`;
+            }
+        }
+
+        // ── Auth Dialog ────────────────────────────────────────────────────
+        function openQaAuthDialog() {
+            const overlay = document.getElementById('qa-auth-overlay');
+            overlay.classList.remove('hidden');
+            populateAuthModal();
+        }
+
+        function closeQaAuthDialog() {
+            document.getElementById('qa-auth-overlay').classList.add('hidden');
+            document.getElementById('auth-fetch-status').classList.add('hidden');
+        }
+
+        function populateAuthModal() {
+            const cfg = detectedAuthConfig;
+            const descEl = document.getElementById('auth-modal-description');
+            const fieldsEl = document.getElementById('auth-modal-fields');
+            fieldsEl.innerHTML = '';
+
+            if (!cfg || !cfg.auth_detected || cfg.auth_type === 'none') {
+                descEl.textContent = 'No authentication required. This appears to be a public API.';
+                fieldsEl.innerHTML = `<p class="text-[11px] text-t-muted text-center py-3">No credentials needed.</p>`;
+                document.getElementById('auth-submit-btn').textContent = 'Continue Without Auth';
+                return;
+            }
+
+            descEl.textContent = cfg.description || `Detected ${cfg.auth_type} authentication.`;
+            document.getElementById('auth-submit-btn').innerHTML = 'Authenticate &amp; Run';
+
+            if (cfg.auth_type === 'bearer' && cfg.token_endpoint) {
+                // Show dynamic fields from AI-detected request body
+                const reqBody = cfg.token_request_body || {};
+                const fieldNames = Object.keys(reqBody);
+
+                fieldsEl.innerHTML = `
+                    <div class="p-2.5 bg-t-selected/60 rounded-lg border border-t-border-subtle mb-3">
+                        <div class="text-[9px] uppercase tracking-wider text-t-dimmed font-bold mb-1">Token Endpoint</div>
+                        <div class="font-mono text-[10px] text-t-accent">${cfg.token_method || 'POST'} ${cfg.token_endpoint}</div>
+                    </div>
+                `;
+
+                if (fieldNames.length > 0) {
+                    fieldNames.forEach(fieldName => {
+                        const isPassword = fieldName.toLowerCase().includes('pass') || fieldName.toLowerCase().includes('secret');
+                        const label = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+                        fieldsEl.innerHTML += `
+                            <div>
+                                <label class="text-[9px] uppercase tracking-wider text-t-dimmed font-bold mb-1 block">${label}</label>
+                                <input type="${isPassword ? 'password' : 'text'}"
+                                    id="auth-field-${fieldName}"
+                                    placeholder="${label}..."
+                                    class="w-full text-xs bg-t-selected border border-t-border rounded p-2 text-t-text focus:outline-none focus:border-t-cyan font-mono transition-colors">
+                            </div>
+                        `;
+                    });
+                } else {
+                    // Fallback: manual token input
+                    fieldsEl.innerHTML += `
+                        <div>
+                            <label class="text-[9px] uppercase tracking-wider text-t-dimmed font-bold mb-1 block">Bearer Token (manual)</label>
+                            <input type="text" id="auth-field-manual-token" placeholder="Paste your token here..."
+                                class="w-full text-xs bg-t-selected border border-t-border rounded p-2 text-t-text focus:outline-none focus:border-t-cyan font-mono transition-colors">
+                        </div>
+                    `;
+                }
+
+            } else if (cfg.auth_type === 'basic') {
+                fieldsEl.innerHTML = `
+                    <div>
+                        <label class="text-[9px] uppercase tracking-wider text-t-dimmed font-bold mb-1 block">Username</label>
+                        <input type="text" id="auth-field-username" placeholder="Username"
+                            class="w-full text-xs bg-t-selected border border-t-border rounded p-2 text-t-text focus:outline-none focus:border-t-cyan font-mono mb-3">
+                        <label class="text-[9px] uppercase tracking-wider text-t-dimmed font-bold mb-1 block">Password</label>
+                        <input type="password" id="auth-field-password" placeholder="Password"
+                            class="w-full text-xs bg-t-selected border border-t-border rounded p-2 text-t-text focus:outline-none focus:border-t-cyan font-mono">
+                    </div>
+                `;
+            } else if (cfg.auth_type === 'apikey') {
+                const headerName = cfg.apikey_header_name || 'X-API-Key';
+                fieldsEl.innerHTML = `
+                    <div>
+                        <label class="text-[9px] uppercase tracking-wider text-t-dimmed font-bold mb-1 block">Header: ${headerName}</label>
+                        <input type="text" id="auth-field-apikey" placeholder="API Key value..."
+                            class="w-full text-xs bg-t-selected border border-t-border rounded p-2 text-t-text focus:outline-none focus:border-t-cyan font-mono">
+                    </div>
+                `;
+            } else {
+                fieldsEl.innerHTML = `
+                    <div>
+                        <label class="text-[9px] uppercase tracking-wider text-t-dimmed font-bold mb-1 block">Bearer Token</label>
+                        <input type="text" id="auth-field-manual-token" placeholder="Paste your access token..."
+                            class="w-full text-xs bg-t-selected border border-t-border rounded p-2 text-t-text focus:outline-none focus:border-t-cyan font-mono">
+                    </div>
+                `;
+            }
+        }
+
+        // ── Auth Submit: fetch token and run ───────────────────────────────
+        async function submitAuthAndRun() {
+            const cfg = detectedAuthConfig;
+            const statusEl = document.getElementById('auth-fetch-status');
+            const msgEl = document.getElementById('auth-fetch-msg');
+            const submitBtn = document.getElementById('auth-submit-btn');
+
+            submitBtn.disabled = true;
+            statusEl.classList.remove('hidden');
+
+            if (!cfg || !cfg.auth_detected || cfg.auth_type === 'none') {
+                closeQaAuthDialog();
+                await executeAutomationTestSuite();
+                return;
+            }
+
+            if (cfg.auth_type === 'bearer' && cfg.token_endpoint) {
+                const reqBody = cfg.token_request_body || {};
+                const fieldNames = Object.keys(reqBody);
+                const manualEl = document.getElementById('auth-field-manual-token');
+
+                if (manualEl) {
+                    // Direct manual token
+                    activeAuthToken = manualEl.value.trim();
+                    if (!activeAuthToken) { alert('Please enter a token.'); submitBtn.disabled = false; statusEl.classList.add('hidden'); return; }
+                    logToQaTerminal('info', `[AUTH] Using manual bearer token.`);
+                    showAuthStatus('authenticated');
+                    closeQaAuthDialog();
+                    await executeAutomationTestSuite();
+                    return;
+                }
+
+                // Build body from dynamic fields
+                const body = {};
+                let missing = [];
+                fieldNames.forEach(f => {
+                    const el = document.getElementById(`auth-field-${f}`);
+                    if (el) {
+                        body[f] = el.value;
+                        if (!el.value.trim()) missing.push(f);
+                    }
+                });
+                if (missing.length > 0) {
+                    alert(`Please fill in: ${missing.join(', ')}`);
+                    submitBtn.disabled = false;
+                    statusEl.classList.add('hidden');
+                    return;
+                }
+
+                const tokenUrl = currentApiSpec.baseUrl.replace(/\/$/, '') + '/' + cfg.token_endpoint.replace(/^\//, '');
+                msgEl.textContent = `POST ${tokenUrl}...`;
+                logToQaTerminal('info', `[AUTH] Fetching token: ${cfg.token_method || 'POST'} ${tokenUrl}`);
+                logToQaTerminal('info', `[AUTH REQUEST BODY] ${JSON.stringify(body)}`);
+
+                try {
+                    const proxyResp = await fetch('/proxy-request/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            url: tokenUrl,
+                            method: cfg.token_method || 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: body
+                        })
+                    });
+                    const proxyData = await proxyResp.json();
+                    logToQaTerminal('info', `[AUTH RESPONSE] Status: ${proxyData.status_code}`);
+                    logToQaTerminal('info', `[AUTH RESPONSE BODY] ${JSON.stringify(proxyData.body || proxyData.response_body || {}).slice(0, 500)}`);
+
+                    if (proxyData.error) throw new Error(proxyData.error);
+                    if (proxyData.status_code >= 400) throw new Error(`Server returned ${proxyData.status_code}`);
+
+                    // Extract token from response using JSON path
+                    const respBody = proxyData.body || proxyData.response_body || {};
+                    const tokenPath = cfg.token_json_path || 'token';
+                    activeAuthToken = extractByPath(respBody, tokenPath);
+
+                    if (!activeAuthToken) {
+                        // Try common paths
+                        for (const path of ['token', 'access_token', 'data.token', 'data.access_token', 'result.token', 'accessToken']) {
+                            const found = extractByPath(respBody, path);
+                            if (found) { activeAuthToken = found; break; }
+                        }
+                    }
+
+                    if (!activeAuthToken) {
+                        logToQaTerminal('warning', `[AUTH] Could not auto-extract token. Response body: ${JSON.stringify(respBody).slice(0, 200)}`);
+                        alert(`Got response but could not find token automatically. Check console for response body and paste token manually.`);
+                        submitBtn.disabled = false;
+                        statusEl.classList.add('hidden');
+                        return;
+                    }
+
+                    logToQaTerminal('success', `[AUTH] ✓ Token acquired successfully! (${activeAuthToken.slice(0, 30)}...)`);
+                    showAuthStatus('authenticated');
+                    closeQaAuthDialog();
+                    await executeAutomationTestSuite();
+
+                } catch (err) {
+                    logToQaTerminal('error', `[AUTH] Token fetch failed: ${err.message}`);
+                    alert(`Authentication failed: ${err.message}`);
+                    submitBtn.disabled = false;
+                    statusEl.classList.add('hidden');
+                }
+
+            } else if (cfg.auth_type === 'basic') {
+                const username = document.getElementById('auth-field-username')?.value?.trim();
+                const password = document.getElementById('auth-field-password')?.value;
+                if (!username) { alert('Username is required.'); submitBtn.disabled = false; statusEl.classList.add('hidden'); return; }
+                activeAuthToken = { type: 'basic', username, password };
+                logToQaTerminal('success', `[AUTH] ✓ Basic auth set for user "${username}"`);
+                showAuthStatus('authenticated');
+                closeQaAuthDialog();
+                await executeAutomationTestSuite();
+
+            } else if (cfg.auth_type === 'apikey') {
+                const key = document.getElementById('auth-field-apikey')?.value?.trim();
+                if (!key) { alert('API Key is required.'); submitBtn.disabled = false; statusEl.classList.add('hidden'); return; }
+                activeAuthToken = { type: 'apikey', headerName: cfg.apikey_header_name || 'X-API-Key', value: key };
+                logToQaTerminal('success', `[AUTH] ✓ API Key set for header "${activeAuthToken.headerName}"`);
+                showAuthStatus('authenticated');
+                closeQaAuthDialog();
+                await executeAutomationTestSuite();
+
+            } else {
+                closeQaAuthDialog();
+                await executeAutomationTestSuite();
+            }
+
+            submitBtn.disabled = false;
+        }
+
+        // Helper: traverse nested object by dot-path e.g. "data.access_token"
+        function extractByPath(obj, path) {
+            if (!obj || !path) return null;
+            const parts = path.split('.');
+            let current = obj;
+            for (const part of parts) {
+                if (current === null || current === undefined) return null;
+                current = current[part];
+            }
+            return current || null;
+        }
+
+        // ── Build Auth Headers ─────────────────────────────────────────────
+        function buildAuthHeaders() {
+            const headers = {};
+            if (!activeAuthToken) return headers;
+
+            if (typeof activeAuthToken === 'string') {
+                headers['Authorization'] = `Bearer ${activeAuthToken}`;
+            } else if (activeAuthToken.type === 'basic') {
+                try { headers['Authorization'] = `Basic ${btoa(activeAuthToken.username + ':' + (activeAuthToken.password || ''))}`; } catch(e) {}
+            } else if (activeAuthToken.type === 'apikey') {
+                headers[activeAuthToken.headerName] = activeAuthToken.value;
+            }
+            return headers;
+        }
+
+        // ── Check if auth prompt needed ────────────────────────────────────
+        function runSuiteOrPromptAuth() {
+            if (!generatedTestPlan || !generatedTestPlan.steps || generatedTestPlan.steps.length === 0) {
+                alert('No steps to execute. Please generate a test plan first.');
+                return;
+            }
+
+            const hasAuthSteps = generatedTestPlan.required_inputs &&
+                generatedTestPlan.required_inputs.some(ri => ri.type === 'auth_token_or_credentials');
+            const needsAuth = detectedAuthConfig && detectedAuthConfig.auth_detected && detectedAuthConfig.auth_type !== 'none';
+
+            if (hasAuthSteps && needsAuth && !activeAuthToken) {
+                openQaAuthDialog();
+            } else {
+                executeAutomationTestSuite();
+            }
+        }
+
+        // ── Endpoint Tree ──────────────────────────────────────────────────
+        function renderEndpointTree(spec) {
+            const container = document.getElementById('endpoint-tree-container');
+            container.innerHTML = '';
+            const endpoints = spec.endpoints;
+            document.getElementById('endpoint-count').innerText = endpoints.length;
+
+            if (!endpoints.length) {
+                container.innerHTML = `<div class="text-xs text-t-faint italic py-8 text-center">No paths found in spec.</div>`;
+                return;
+            }
+
+            const grouped = {};
+            endpoints.forEach(ep => {
+                const tag = (ep.tags && ep.tags[0]) || 'default';
+                if (!grouped[tag]) grouped[tag] = [];
+                grouped[tag].push(ep);
+            });
+
+            const methodColors = { GET: 'text-t-cyan', POST: 'text-t-accent', PUT: 'text-amber-500', DELETE: 'text-red-500', PATCH: 'text-purple-500' };
+
+            Object.keys(grouped).sort().forEach(tag => {
+                const header = document.createElement('div');
+                header.className = 'text-[9px] text-t-dimmed uppercase tracking-wider mt-3 mb-1 select-none font-bold';
+                header.innerText = `── ${tag} ──`;
+                container.appendChild(header);
+
+                grouped[tag].forEach((ep, idx) => {
+                    const connector = idx === grouped[tag].length - 1 ? '└── ' : '├── ';
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'w-full text-start py-0.5 hover:bg-t-selected/50 flex items-baseline gap-0 border border-transparent rounded-sm font-mono';
+                    btn.dataset.path = ep.path;
+                    btn.dataset.method = ep.method;
+                    const color = methodColors[ep.method] || 'text-t-muted';
+                    btn.innerHTML = `
+                        <span class="text-t-faint select-none text-[10px] shrink-0">${connector}</span>
+                        <span class="${color} font-semibold text-[9px] w-12 shrink-0">${ep.method}</span>
+                        <span class="text-t-muted hover:text-t-text text-[10px] truncate">${ep.path}</span>
+                    `;
+                    container.appendChild(btn);
+                });
+            });
+
+            document.getElementById('endpoint-search').oninput = function() {
+                const val = this.value.toLowerCase().trim();
+                container.querySelectorAll('button').forEach(btn => {
+                    const text = ((btn.dataset.path || '') + ' ' + (btn.dataset.method || '')).toLowerCase();
+                    btn.style.display = text.includes(val) ? 'flex' : 'none';
+                });
+            };
+        }
+
+        // ── Terminal Logger ────────────────────────────────────────────────
+        function logToQaTerminal(type, text) {
+            const container = document.getElementById('qa-runner-terminal');
+            if (type === 'clear') { container.innerHTML = ''; return; }
+
+            if (type === 'token') {
+                let lastSpan = container.lastElementChild;
+                if (!lastSpan || !lastSpan.classList.contains('qa-stream-block')) {
+                    lastSpan = document.createElement('span');
+                    lastSpan.className = 'qa-stream-block text-t-text/85 font-mono block whitespace-pre-wrap mt-2 mb-1 p-2.5 bg-t-selected/40 border border-t-border-subtle rounded-lg text-[9px] max-h-40 overflow-y-auto';
+                    container.appendChild(lastSpan);
+                }
+                lastSpan.textContent += text;
+                lastSpan.scrollTop = lastSpan.scrollHeight;
+                container.scrollTop = container.scrollHeight;
+                return;
+            }
+
+            const div = document.createElement('div');
+            const typeMap = { error: 'text-red-400 font-bold', success: 'text-t-accent font-semibold', info: 'text-t-muted', warning: 'text-amber-400 font-semibold' };
+            div.className = typeMap[type] || 'text-t-text';
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // ── Generate Test Plan ─────────────────────────────────────────────
+        async function generateAutomationTestPlan() {
+            if (!currentApiSpec) { alert('Please load an OpenAPI schema first.'); return; }
+
+            const checkedBoxes = document.querySelectorAll('input[name="qa-test-type"]:checked');
+            const testTypes = Array.from(checkedBoxes).map(cb => cb.value);
+            if (testTypes.length === 0) { alert('Please select at least one test type.'); return; }
+
+            const btn = document.getElementById('qa-generate-plan-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Generating...`;
+            }
+
+            logToQaTerminal('clear');
+            logToQaTerminal('info', `=========================================`);
+            logToQaTerminal('info', `AI TEST PLANNER — STREAMING MODE`);
+            // logToQaTerminal('info', `Model: moonshotai/kimi-k2.6`);
+            logToQaTerminal('info', `Schema: "${currentApiSpec.title}"`);
+            logToQaTerminal('info', `=========================================`);
+
+            try {
+                const response = await fetch('/generate-test-plan/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ endpoints: currentApiSpec.endpoints, test_types: testTypes })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
+
+                    for (let line of lines) {
+                        line = line.trim();
+                        if (line.startsWith("data: ")) {
+                            try {
+                                const event = JSON.parse(line.slice(6));
+                                if (event.type === 'status') {
+                                    logToQaTerminal('info', `\n[Planner] ${event.message}`);
+                                } else if (event.type === 'token') {
+                                    logToQaTerminal('token', event.content);
+                                } else if (event.type === 'chunk_done') {
+                                    logToQaTerminal('success', `\n✓ Section complete.`);
+                                } else if (event.type === 'final_plan') {
+                                    generatedTestPlan = event.plan;
+                                    renderVisualTestPlan();
+                                    if (event.plan.ai_calls?.length > 0) {
+                                        event.plan.ai_calls.forEach((call, i) => {
+                                            logToQaTerminal('info', `\n[AI CALL ${i+1}] POST ${event.plan.ai_request_url}`);
+                                            logToQaTerminal('info', `[REQUEST BODY]\n${JSON.stringify(call.request_body, null, 2)}`);
+                                            logToQaTerminal('info', `-----------------------------------------`);
+                                        });
+                                    }
+                                    logToQaTerminal('success', `\n✓ Plan compiled: ${event.plan.steps.length} steps.`);
+                                    setQaRunButtonsDisabled(false);
+                                    document.getElementById('qa-run-status').textContent = "Ready to Run";
+                                }
+                            } catch (e) { console.error("SSE parse error", e); }
+                        }
+                    }
+                }
+            } catch (err) {
+                logToQaTerminal('error', `Plan generation failed: ${err.message}`);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg> Generate AI Test Plan`;
+                }
+            }
+        }
+
+        function renderVisualTestPlan() {
+            const container = document.getElementById('qa-test-plan-container');
+            const summaryEl = document.getElementById('qa-plan-summary');
+            const countEl = document.getElementById('qa-plan-step-count');
+            const listEl = document.getElementById('qa-plan-steps-list');
+
+            container.classList.remove('hidden');
+            summaryEl.innerHTML = `<span class="text-t-accent font-semibold">Plan Summary:</span> ${generatedTestPlan.test_plan_summary}`;
+            countEl.textContent = `${generatedTestPlan.steps.length} Steps`;
+            listEl.innerHTML = '';
+
+            const methodColors = {
+                GET: 'text-t-cyan bg-t-cyan/5 border-t-cyan/20',
+                POST: 'text-t-accent bg-t-accent/5 border-t-accent/20',
+                PUT: 'text-amber-500 bg-amber-500/5 border-amber-500/20',
+                DELETE: 'text-red-500 bg-red-500/5 border-red-500/20',
+                PATCH: 'text-purple-500 bg-purple-500/5 border-purple-500/20'
+            };
+
+            generatedTestPlan.steps.forEach(step => {
+                const div = document.createElement('div');
+                div.className = 'p-2.5 rounded-lg border border-t-border bg-t-panel/80 hover:border-t-cyan/30 transition-all flex items-start justify-between text-xs gap-2';
+                const mColor = methodColors[step.method] || 'text-t-muted bg-t-panel border-t-border';
+                div.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[10px] text-t-dimmed font-mono">#${step.id}</span>
+                            <span class="font-bold text-[9px] px-1.5 py-0.2 rounded border ${mColor}">${step.method}</span>
+                            <span class="text-t-text font-mono text-[10px] select-all font-semibold truncate">${step.endpoint}</span>
+                        </div>
+                        <p class="text-[10px] text-t-muted leading-relaxed mb-1">${step.description}</p>
+                        <span class="text-[9px] text-t-cyan bg-t-cyan/10 px-1.5 py-0.2 rounded border border-t-cyan/20 font-semibold">${step.test_type}</span>
+                    </div>
+                    <button onclick="removePlanStep(${step.id})" class="text-t-muted hover:text-red-500 text-xs font-mono shrink-0 px-1" title="Remove">[x]</button>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
+        function removePlanStep(stepId) {
+            if (!generatedTestPlan) return;
+            generatedTestPlan.steps = generatedTestPlan.steps.filter(s => s.id !== stepId);
+            renderVisualTestPlan();
+            if (generatedTestPlan.steps.length === 0) {
+                setQaRunButtonsDisabled(true);
+                document.getElementById('qa-run-status').textContent = "No Steps in Plan";
+            }
+        }
+
+        // ── Execute Test Suite ─────────────────────────────────────────────
+        async function executeAutomationTestSuite() {
+            if (!generatedTestPlan?.steps?.length) { alert('No steps to execute.'); return; }
+
+            const steps = generatedTestPlan.steps;
+            const totalSteps = steps.length;
+            let passedCount = 0, failedCount = 0;
+
+            logToQaTerminal('clear');
+            logToQaTerminal('info', `=========================================`);
+            logToQaTerminal('info', `🚀 AUTOMATED TEST SUITE EXECUTION`);
+            logToQaTerminal('info', `=========================================`);
+            logToQaTerminal('info', `Target: ${currentApiSpec.baseUrl}`);
+            if (activeAuthToken) {
+                logToQaTerminal('success', `Auth: Token active ✓`);
+            } else {
+                logToQaTerminal('warning', `Auth: No credentials (unauthenticated run)`);
+            }
+
+            setQaRunButtonsDisabled(true);
+            const repTab = document.getElementById('qa-tab-btn-report');
+            if (repTab) { repTab.disabled = true; repTab.classList.add('opacity-30', 'cursor-not-allowed'); }
+            setQaRightTab('console');
+            executionResults = [];
+
+            for (let i = 0; i < totalSteps; i++) {
+                const step = steps[i];
+                const progress = Math.round((i / totalSteps) * 100);
+                document.getElementById('qa-progress-bar').style.width = `${progress}%`;
+                document.getElementById('metric-total').textContent = `${i}`;
+                document.getElementById('metric-passed').textContent = `${passedCount}`;
+                document.getElementById('metric-failed').textContent = `${failedCount}`;
+                document.getElementById('metric-rate').textContent = `${i > 0 ? Math.round((passedCount/i)*100) : 0}%`;
+                document.getElementById('qa-run-status').textContent = `Running step ${i+1}/${totalSteps}...`;
+                logToQaTerminal('info', `\n[Step ${i+1}/${totalSteps}] ${step.test_type} → ${step.method} ${step.endpoint}`);
+
+                let result = { id: step.id, endpoint: step.endpoint, method: step.method, test_type: step.test_type, status: 'passed', details: '' };
+
+                try {
+                    const epMeta = currentApiSpec.endpoints.find(e => e.path === step.endpoint && e.method === step.method);
+                    let absoluteUrl = currentApiSpec.baseUrl.replace(/\/$/, '') + '/' + step.endpoint.replace(/^\//, '');
+
+                    if (epMeta?.parameters) {
+                        epMeta.parameters.forEach(p => {
+                            if (p.in === 'path') {
+                                let val = p.default ?? "1";
+                                if (step.test_type === 'Responses Expectations Test' && p.type === 'integer') val = "invalid_id";
+                                absoluteUrl = absoluteUrl.replace(`{${p.name}}`, encodeURIComponent(val));
+                            }
+                        });
+                    }
+
+                    // Build request headers: inject auth for authenticated steps
+                    const headers = {};
+                    if (step.test_type !== 'Authentication Test') {
+                        Object.assign(headers, buildAuthHeaders());
+                    }
+
+                    let bodyPayload = null;
+                    if (epMeta?.requestBody) {
+                        headers['Content-Type'] = epMeta.requestBody.mediaType || 'application/json';
+                        let bodyObj = generateMockDataFromSchema(epMeta.requestBody.schema);
+                        if (step.test_type === 'Responses Expectations Test') {
+                            const reqs = epMeta.requestBody.schema?.required || [];
+                            if (reqs.length > 0) delete bodyObj[reqs[0]];
+                            else bodyObj = null;
+                        } else if (step.test_type === 'Security & Injection Test') {
+                            if (bodyObj && typeof bodyObj === 'object') {
+                                for (let key in bodyObj) {
+                                    if (typeof bodyObj[key] === 'string') {
+                                        bodyObj[key] = "' OR '1'='1' -- <script>alert(1)<\/script>";
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        bodyPayload = bodyObj;
+                    }
+
+                    logToQaTerminal('info', `  → URL: ${absoluteUrl}`);
+                    logToQaTerminal('info', `  → Headers: ${JSON.stringify(headers)}`);
+                    if (bodyPayload) logToQaTerminal('info', `  → Body: ${JSON.stringify(bodyPayload).slice(0, 200)}`);
+
+                    const reqStart = Date.now();
+                    const proxyResp = await fetch('/proxy-request/', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ url: absoluteUrl, method: step.method, headers, body: bodyPayload })
+                    });
+                    const resData = await proxyResp.json();
+                    const elapsed = Date.now() - reqStart;
+                    logToQaTerminal('info', `  ← Status: ${resData.status_code} (${elapsed}ms)`);
+                    logToQaTerminal('info', `  ← Body: ${JSON.stringify(resData.body || resData.response_body || {}).slice(0, 200)}`);
+
+                    if (resData.error) {
+                        result.status = 'failed';
+                        result.details = `Network Error: ${resData.error}`;
+                    } else {
+                        const status = resData.status_code;
+                        if (step.test_type === 'Authentication Test') {
+                            if (status === 401 || status === 403) {
+                                result.status = 'passed';
+                                result.details = `Correctly blocked with HTTP ${status}.`;
+                            } else {
+                                result.status = 'failed';
+                                result.details = `Security Risk: endpoint returned HTTP ${status} without credentials.`;
+                            }
+                        } else if (step.test_type === 'Responses Expectations Test') {
+                            if (status === 500) { result.status = 'failed'; result.details = `Stability issue: HTTP 500 on validation payload.`; }
+                            else { result.status = 'passed'; result.details = `Correctly returned HTTP ${status}.`; }
+                        } else if (step.test_type === 'Security & Injection Test') {
+                            if (status === 500) { result.status = 'failed'; result.details = `Vulnerability: HTTP 500 on injection payload.`; }
+                            else { result.status = 'passed'; result.details = `Safely handled injection (HTTP ${status}).`; }
+                        } else if (step.test_type === 'Performance/Latency Test') {
+                            let latencies = [elapsed];
+                            for (let j = 1; j < 5; j++) {
+                                const s = Date.now();
+                                await fetch('/proxy-request/', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ url: absoluteUrl, method: step.method, headers, body: bodyPayload }) });
+                                latencies.push(Date.now() - s);
+                            }
+                            const avg = Math.round(latencies.reduce((a,b)=>a+b,0)/latencies.length);
+                            if (avg > 500) { result.status = 'failed'; result.details = `Avg latency ${avg}ms exceeds 500ms.`; }
+                            else { result.status = 'passed'; result.details = `Avg latency ${avg}ms passes.`; }
+                        } else {
+                            if (status >= 200 && status < 300) { result.status = 'passed'; result.details = `HTTP ${status} in ${elapsed}ms.`; }
+                            else { result.status = 'failed'; result.details = `HTTP ${status} (${resData.status_text || 'Error'}).`; }
+                        }
+                    }
+                } catch (e) {
+                    result.status = 'failed';
+                    result.details = `Crash: ${e.message}`;
+                }
+
+                if (result.status === 'passed') { passedCount++; logToQaTerminal('success', `  [PASS] ${result.details}`); }
+                else { failedCount++; logToQaTerminal('error', `  [FAIL] ${result.details}`); }
+                executionResults.push(result);
+            }
+
+            // Final stats
+            document.getElementById('qa-progress-bar').style.width = `100%`;
+            document.getElementById('metric-total').textContent = `${totalSteps}`;
+            document.getElementById('metric-passed').textContent = `${passedCount}`;
+            document.getElementById('metric-failed').textContent = `${failedCount}`;
+            const finalRate = Math.round((passedCount/totalSteps)*100);
+            document.getElementById('metric-rate').textContent = `${finalRate}%`;
+            document.getElementById('qa-run-status').textContent = "Execution Complete";
+
+            logToQaTerminal('info', `\n=========================================`);
+            logToQaTerminal('info', `🏁 COMPLETE — Passed: ${passedCount} | Failed: ${failedCount} | Rate: ${finalRate}%`);
+            logToQaTerminal('info', `=========================================`);
+
+            // Stream AI report
+            setQaRightTab('report');
+            const viewer = document.getElementById('qa-report-viewer');
+            viewer.innerHTML = `
+                <div class="flex items-center gap-3 pb-2 border-b border-t-border mb-4">
+                    <span class="text-xl animate-pulse">📊</span>
+                    <div>
+                        <h1 class="text-xs font-bold text-t-text uppercase tracking-wider">Compiling Report</h1>
+                        <p class="text-[9px] text-t-muted">AI Lead Analyst generating report...</p>
+                    </div>
+                </div>
+                <div class="border border-t-border bg-t-panel/30 rounded-xl p-4 markdown-body" id="qa-live-markdown-container">
+                    <p class="text-xs italic text-t-muted font-mono">Awaiting stream...</p>
+                </div>
+            `;
+
+            try {
+                const repResp = await fetch('/generate-test-report/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ results: executionResults })
+                });
+                const reader = repResp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let accMd = "";
+                const mdCon = document.getElementById('qa-live-markdown-container');
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
+                    for (let line of lines) {
+                        line = line.trim();
+                        if (line.startsWith("data: ")) {
+                            try {
+                                const event = JSON.parse(line.slice(6));
+                                if (event.type === 'token') {
+                                    accMd += event.content;
+                                    if (mdCon) mdCon.innerHTML = marked.parse(accMd);
+                                } else if (event.type === 'final_report') {
+                                    qaReportMarkdown = event.report_markdown;
+                                    renderReportVisual(event);
+                                    logToQaTerminal('info', `\n[AI API] POST ${event.ai_request_url}`);
+                                    logToQaTerminal('info', `[REQUEST BODY]\n${JSON.stringify(event.ai_request_body, null, 2).slice(0, 400)}`);
+                                    logToQaTerminal('info', `[RESPONSE] ${JSON.stringify(event.ai_response_body)}`);
+                                }
+                            } catch(e) { console.error("Report SSE error", e); }
+                        }
+                    }
+                }
+                if (repTab) { repTab.disabled = false; repTab.classList.remove('opacity-30', 'cursor-not-allowed'); }
+                logToQaTerminal('success', `✓ Report compiled.`);
+            } catch(err) {
+                logToQaTerminal('error', `Report failed: ${err.message}`);
+            } finally {
+                setQaRunButtonsDisabled(false);
+            }
+        }
+
+        function renderReportVisual(data) {
+            const viewer = document.getElementById('qa-report-viewer');
+            viewer.innerHTML = '';
+            const summary = data.summary;
+            const rateColor = summary.success_rate >= 80 ? 'text-t-accent' : summary.success_rate >= 50 ? 'text-amber-500' : 'text-red-500';
+
+            const headDiv = document.createElement('div');
+            headDiv.className = 'space-y-4';
+            headDiv.innerHTML = `
+                <div class="flex items-center gap-3 pb-2 border-b border-t-border">
+                    <span class="text-xl">📊</span>
+                    <div>
+                        <h1 class="text-xs font-bold text-t-text uppercase tracking-wider">API Test Report</h1>
+                        <p class="text-[9px] text-t-muted">AI QA AUTOMATION SUITE</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="border border-t-border rounded-xl p-3 bg-t-panel/40">
+                        <div class="text-[9px] uppercase tracking-wider text-t-muted mb-1 font-bold">Pass Rate</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-lg font-bold ${rateColor}">${summary.success_rate}%</span>
+                            <span class="text-[9px] text-t-dimmed">${summary.passed}/${summary.total}</span>
+                        </div>
+                    </div>
+                    <div class="border border-t-border rounded-xl p-3 bg-t-panel/40">
+                        <div class="text-[9px] uppercase tracking-wider text-t-muted mb-1 font-bold">Summary</div>
+                        <div class="flex gap-3 text-[11px] mt-1">
+                            <span class="text-t-accent font-semibold">${summary.passed} Pass</span>
+                            <span class="text-red-500 font-semibold">${summary.failed} Fail</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            viewer.appendChild(headDiv);
+
+            const byType = {};
+            executionResults.forEach(r => { if (!byType[r.test_type]) byType[r.test_type] = []; byType[r.test_type].push(r); });
+
+            const breakdown = document.createElement('div');
+            breakdown.className = 'space-y-3 pt-2';
+            breakdown.innerHTML = `<h2 class="text-[10px] font-bold uppercase tracking-wider text-t-cyan border-b border-t-border/50 pb-1">Detailed Breakdown</h2>`;
+
+            for (let testType in byType) {
+                const card = document.createElement('div');
+                card.className = 'border border-t-border rounded-xl p-3 bg-t-panel/20 space-y-2';
+                card.innerHTML = `<h3 class="text-[9px] font-semibold text-t-text uppercase tracking-wider border-b border-t-border-subtle pb-1">${testType}</h3>`;
+                const list = document.createElement('div');
+                list.className = 'space-y-1';
+                byType[testType].forEach(r => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-start justify-between text-xs gap-2 p-1.5 rounded bg-t-panel/40 border border-t-border-subtle';
+                    const mc = {GET:'text-t-cyan',POST:'text-t-accent',PUT:'text-amber-500',DELETE:'text-red-500'}[r.method] || 'text-t-muted';
+                    const badge = r.status === 'passed'
+                        ? `<span class="text-[8px] text-t-accent bg-t-accent/10 border border-t-accent/25 px-1.5 py-0.2 rounded font-semibold shrink-0">PASS</span>`
+                        : `<span class="text-[8px] text-red-500 bg-red-500/10 border border-red-500/25 px-1.5 py-0.2 rounded font-semibold shrink-0">FAIL</span>`;
+                    row.innerHTML = `
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-1.5 font-mono mb-0.5">
+                                <span class="${mc} font-bold text-[9px]">${r.method}</span>
+                                <span class="text-t-text truncate font-semibold text-[10px]">${r.endpoint}</span>
+                            </div>
+                            <div class="text-[10px] text-t-muted">${r.details}</div>
+                        </div>${badge}`;
+                    list.appendChild(row);
+                });
+                card.appendChild(list);
+                breakdown.appendChild(card);
+            }
+            viewer.appendChild(breakdown);
+
+            if (data.report_markdown) {
+                const aiDiv = document.createElement('div');
+                aiDiv.className = 'border border-t-border bg-t-panel/30 rounded-xl p-4 markdown-body';
+                aiDiv.innerHTML = `
+                    <h2 class="text-[10px] font-bold uppercase tracking-wider text-t-cyan flex items-center gap-1.5 border-b border-t-border/50 pb-2 mb-3">
+                        <svg class="w-3.5 h-3.5 text-t-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364.364-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                        AI Lead Analyst Report
+                    </h2>
+                    <div class="text-t-text leading-relaxed select-text">${marked.parse(data.report_markdown)}</div>
+                `;
+                viewer.appendChild(aiDiv);
+            }
+        }
+
+        function setQaRightTab(tab) {
+            const isConsole = tab === 'console';
+            document.getElementById('qa-tab-btn-console').className = isConsole
+                ? "px-2.5 py-0.5 bg-t-active-lang text-t-accent border-r border-t-border transition-all"
+                : "px-2.5 py-0.5 text-t-dimmed hover:text-t-text border-r border-t-border transition-all";
+            document.getElementById('qa-tab-btn-report').className = !isConsole
+                ? "px-2.5 py-0.5 bg-t-active-lang text-t-accent transition-all"
+                : "px-2.5 py-0.5 text-t-dimmed hover:text-t-text transition-all";
+            document.getElementById('qa-tab-content-console').classList.toggle('hidden', !isConsole);
+            document.getElementById('qa-tab-content-report').classList.toggle('hidden', isConsole);
+        }
+
+        function copyQaReportMarkdown() {
+            if (!qaReportMarkdown) return;
+            navigator.clipboard.writeText(qaReportMarkdown).then(() => alert('Copied to clipboard!'));
+        }
+
+        function downloadQaReportMarkdown() {
+            if (!qaReportMarkdown) return;
+            const blob = new Blob([qaReportMarkdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `qa_report_${(currentApiSpec?.title || 'api').replace(/\s+/g,'_').toLowerCase()}.md`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // ── Mock Data Generator ────────────────────────────────────────────
+        function generateMockDataFromSchema(schema) {
+            if (!schema) return null;
+            if (schema.default !== undefined) return schema.default;
+            const type = schema.type || 'object';
+            if (type === 'object') {
+                const obj = {};
+                for (const [k, v] of Object.entries(schema.properties || {})) obj[k] = generateMockVal(k, v);
+                return obj;
+            } else if (type === 'array') {
+                return [generateMockDataFromSchema(schema.items || {})];
+            }
+            return generateMockVal('value', schema);
+        }
+
+        function generateMockVal(name, schema = {}) {
+            if (schema.default !== undefined) return schema.default;
+            const type = schema.type || 'string';
+            if (type === 'integer' || type === 'number') return 1;
+            if (type === 'boolean') return true;
+            if (type === 'array') return [];
+            if (type === 'string') {
+                if (schema.format === 'date-time') return new Date().toISOString();
+                if (schema.format === 'date') return new Date().toISOString().split('T')[0];
+                const n = name.toLowerCase();
+                if (n.includes('email')) return 'qa_test@example.com';
+                if (n.includes('username') || n.includes('user')) return 'qa_test_user';
+                if (n.includes('phone')) return '+1234567890';
+                if (n.includes('pass')) return 'QaTest!123';
+                if (n.includes('name')) return 'QA Test';
+                return 'dummy_value';
+            }
+            return 'dummy';
+        }
+
+        // ── Responsive: show all columns on desktop init ───────────────────
+        function initLayout() {
+            const isDesktop = window.innerWidth >= 1024;
+            ['panel-endpoints', 'panel-config', 'panel-runner'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.toggle('hidden', !isDesktop);
+            });
+            if (isDesktop) {
+                ['panel-endpoints', 'panel-config', 'panel-runner'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('flex');
+                });
+            }
+        }
+
+        window.addEventListener('resize', initLayout);
+        initLayout();
+    </script>
+</body>
+</html>

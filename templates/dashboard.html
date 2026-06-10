@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenAPI Smart Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -83,11 +84,93 @@
         }
 
         body { background: var(--bg-body); color: var(--text-primary); transition: background 0.2s, color 0.2s; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 2px; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
         ::selection { background: var(--bg-active-lang); color: var(--accent-green); }
+
+        /* Markdown rendering styles */
+        .markdown-body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            color: var(--text-primary);
+        }
+        .markdown-body h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid var(--border-main);
+            padding-bottom: 0.25rem;
+        }
+        .markdown-body h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.4rem;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 0.2rem;
+        }
+        .markdown-body h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 0.8rem;
+            margin-bottom: 0.3rem;
+            color: var(--text-primary);
+        }
+        .markdown-body p {
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+        .markdown-body ul {
+            list-style-type: disc;
+            padding-left: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-size: 12px;
+        }
+        .markdown-body li {
+            margin-bottom: 0.2rem;
+        }
+        .markdown-body code {
+            font-family: monospace;
+            background: var(--bg-selected);
+            padding: 0.1rem 0.25rem;
+            border-radius: 3px;
+            font-size: 0.9em;
+            color: var(--accent-green);
+        }
+        .markdown-body pre {
+            background: var(--bg-panel);
+            padding: 0.5rem;
+            border-radius: 6px;
+            overflow-x: auto;
+            border: 1px solid var(--border-main);
+            margin-bottom: 0.5rem;
+        }
+        .markdown-body pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0.5rem;
+            font-size: 11px;
+        }
+        .markdown-body th, .markdown-body td {
+            border: 1px solid var(--border-main);
+            padding: 0.3rem;
+            text-align: left;
+        }
+        .markdown-body th {
+            background: var(--bg-selected);
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="bg-t-bg text-t-text font-mono h-full flex flex-col text-sm antialiased">
@@ -103,6 +186,18 @@
                 <span class="text-t-accent animate-blink select-none">█</span>
             </div>
             <div class="flex items-center gap-3">
+                <!-- Toggle between API Playground and Test Suite -->
+                <div class="flex items-center border border-t-border rounded overflow-hidden bg-t-panel mr-1">
+                    <button id="mode-btn-playground" onclick="switchMode('playground')" class="px-2 py-0.5 text-xs bg-t-active-lang text-t-accent border-r border-t-border transition-all flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Playground
+                    </button>
+                    <a id="mode-btn-qa" href="/console/qa/" class="px-2 py-0.5 text-xs text-t-muted hover:text-t-text transition-all flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        QA Suite
+                    </a>
+                </div>
+
                 <a href="/" class="text-xs text-t-muted hover:text-t-accent transition-colors duration-75" data-i18n="navHome">Home</a>
                 <span class="text-t-faint select-none">│</span>
                 <a href="/about/" class="text-xs text-t-muted hover:text-t-accent transition-colors duration-75" data-i18n="navAbout">About</a>
@@ -209,42 +304,260 @@
                 </div>
             </aside>
 
-            <!-- ─── CENTER PANEL: Smart Form ─── -->
+            <!-- ─── CENTER PANEL: Smart Form / QA Config ─── -->
             <section class="col-span-12 lg:col-span-5 border-e border-t-border flex flex-col overflow-hidden">
-                <!-- Form Header -->
-                <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0">
-                    <span class="text-xs text-t-muted uppercase tracking-widest" data-i18n="smartFormTitle">request builder</span>
-                    <div id="method-path-badge-container" class="text-xs"></div>
+                <!-- Playground Center Content -->
+                <div id="playground-center-content" class="flex flex-col flex-1 overflow-hidden">
+                    <!-- Form Header -->
+                    <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0">
+                        <span class="text-xs text-t-muted uppercase tracking-widest" data-i18n="smartFormTitle">request builder</span>
+                        <div id="method-path-badge-container" class="text-xs"></div>
+                    </div>
+                    <div class="px-4 py-1 border-b border-t-border-subtle shrink-0">
+                        <p class="text-[11px] text-t-dimmed truncate" id="active-api-info" data-i18n="noEndpoint">no active endpoint</p>
+                    </div>
+                    <!-- Dynamic Form Container -->
+                    <div class="flex-1 overflow-y-auto" id="form-workspace-content">
+                        <div class="flex items-center justify-center h-full text-t-faint text-xs italic px-4 text-center" data-i18n="welcomeForm">select an endpoint to construct the request form.</div>
+                    </div>
                 </div>
-                <div class="px-4 py-1 border-b border-t-border-subtle shrink-0">
-                    <p class="text-[11px] text-t-dimmed truncate" id="active-api-info" data-i18n="noEndpoint">no active endpoint</p>
-                </div>
-                <!-- Dynamic Form Container -->
-                <div class="flex-1 overflow-y-auto" id="form-workspace-content">
-                    <div class="flex items-center justify-center h-full text-t-faint text-xs italic px-4 text-center" data-i18n="welcomeForm">select an endpoint to construct the request form.</div>
+
+                <!-- QA Center Content (Hidden by default) -->
+                <div id="qa-center-content" class="hidden flex-col flex-1 overflow-hidden">
+                    <!-- QA Header -->
+                    <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0 bg-t-subtle">
+                        <span class="text-xs text-t-cyan uppercase tracking-widest font-semibold">QA Suite Configuration</span>
+                        <span class="text-[10px] text-t-muted">PLANNER</span>
+                    </div>
+                    
+                    <!-- Scrollable QA Settings & Plan -->
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <!-- Select Test Types -->
+                        <div class="border border-t-border bg-t-panel/40 rounded-xl p-3.5 space-y-3">
+                            <div class="text-xs text-t-text font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                <svg class="w-4 h-4 text-t-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2h-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                1. Select Test Types
+                            </div>
+                            
+                            <div class="grid grid-cols-1 gap-2.5 pt-1">
+                                <!-- Test Type 1 -->
+                                <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border-subtle bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                    <input type="checkbox" name="qa-test-type" value="Normal Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                    <div>
+                                        <div class="text-xs font-semibold text-t-text">Normal Test</div>
+                                        <div class="text-[10px] text-t-muted">Verify endpoints succeed (200/201) under standard payloads.</div>
+                                    </div>
+                                </label>
+                                <!-- Test Type 2 -->
+                                <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border-subtle bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                    <input type="checkbox" name="qa-test-type" value="Authentication Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                    <div>
+                                        <div class="text-xs font-semibold text-t-text">Authentication Test</div>
+                                        <div class="text-[10px] text-t-muted">Call private endpoints without credentials. Expect 401/403 block.</div>
+                                    </div>
+                                </label>
+                                <!-- Test Type 3 -->
+                                <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border-subtle bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                    <input type="checkbox" name="qa-test-type" value="Responses Expectations Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                    <div>
+                                        <div class="text-xs font-semibold text-t-text">Responses Expectations Test</div>
+                                        <div class="text-[10px] text-t-muted">Fuzz inputs (types, requirements) to check schema validations.</div>
+                                    </div>
+                                </label>
+                                <!-- Test Type 4 -->
+                                <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border-subtle bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                    <input type="checkbox" name="qa-test-type" value="Security & Injection Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                    <div>
+                                        <div class="text-xs font-semibold text-t-text">Security & Injection Test</div>
+                                        <div class="text-[10px] text-t-muted">Inject SQLi & XSS payloads in string parameters. Verify sanitization.</div>
+                                    </div>
+                                </label>
+                                <!-- Test Type 5 -->
+                                <label class="flex items-start gap-3 p-2 rounded-lg border border-t-border-subtle bg-t-panel/30 hover:bg-t-selected/20 transition-all cursor-pointer">
+                                    <input type="checkbox" name="qa-test-type" value="Performance/Latency Test" checked class="w-4 h-4 rounded text-t-cyan border-t-border focus:ring-0 cursor-pointer mt-0.5">
+                                    <div>
+                                        <div class="text-xs font-semibold text-t-text">Performance/Latency Test</div>
+                                        <div class="text-[10px] text-t-muted">Execute rapid stress calls to measure response times and latency.</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Action Button to Generate Plan -->
+                        <button type="button" id="qa-generate-plan-btn" onclick="generateAutomationTestPlan()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold tracking-wide text-white transition-all duration-200 border border-t-cyan/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.25)] bg-t-panel" style="background:linear-gradient(135deg,#0369a1,#0891b2);">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                            Generate Test Plan
+                        </button>
+
+                        <!-- Visual Test Plan Steps Container -->
+                        <div id="qa-test-plan-container" class="hidden border border-t-border bg-t-panel/40 rounded-xl p-3.5 space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="text-xs text-t-text font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-t-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 002-2H9a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                                    2. Generated Test Steps
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button id="qa-center-run-btn" onclick="executeAutomationTestSuite()" disabled class="flex items-center gap-1 px-2 py-0.5 rounded border border-t-accent/30 hover:border-t-accent text-t-accent hover:shadow-[0_0_8px_var(--accent-glow)] text-[10px] font-bold bg-t-panel transition-all duration-150 disabled:opacity-30 disabled:cursor-not-allowed">
+                                        <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+                                        Run Suite
+                                    </button>
+                                    <span id="qa-plan-step-count" class="text-[10px] text-t-cyan bg-t-cyan/10 px-2 py-0.5 rounded-full border border-t-cyan/20 font-bold">0 Steps</span>
+                                </div>
+                            </div>
+                            <div class="text-[11px] text-t-muted italic" id="qa-plan-summary"></div>
+                            
+                            <div class="space-y-2.5 border border-t-border-subtle rounded-lg p-2 bg-t-panel/60" id="qa-plan-steps-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
 
-            <!-- ─── RIGHT PANEL: Live Console ─── -->
+            <!-- ─── RIGHT PANEL: Live Console / QA Console ─── -->
             <section class="col-span-12 lg:col-span-4 flex flex-col overflow-hidden">
-                <!-- Console Header -->
-                <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0">
-                    <div class="flex items-center gap-2">
-                        <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
-                        <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
-                        <span class="text-xs text-t-dimmed ml-2" data-i18n="terminalTitle">response.log</span>
+                <!-- Playground Right Content -->
+                <div id="playground-right-content" class="flex flex-col flex-1 overflow-hidden">
+                    <!-- Console Header -->
+                    <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
+                            <span class="text-xs text-t-dimmed ml-2" data-i18n="terminalTitle">response.log</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="generate-ui-btn" onclick="openGenerateUiDialog()" class="text-[10px] text-t-dimmed hover:text-t-cyan border border-transparent hover:border-t-cyan px-2 py-0.5 rounded transition-all duration-150 uppercase tracking-wider flex items-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed" disabled title="Select an endpoint first">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17.5h7M17.5 14v7"/></svg>
+                                generate ui
+                            </button>
+                            <button onclick="clearTerminal()" class="text-[10px] text-t-dimmed hover:text-amber-500 transition-colors duration-75 uppercase tracking-wider" data-i18n="clear">clear</button>
+                        </div>
                     </div>
-                    <button onclick="clearTerminal()" class="text-[10px] text-t-dimmed hover:text-amber-500 transition-colors duration-75 uppercase tracking-wider" data-i18n="clear">clear</button>
+                    <!-- Terminal Screen -->
+                    <div class="flex-1 overflow-y-auto bg-t-panel p-4 text-xs leading-relaxed select-text" id="terminal-screen">
+                        <span class="text-t-faint" data-i18n="terminalInit">// awaiting request execution...</span>
+                    </div>
                 </div>
-                <!-- Terminal Screen -->
-                <div class="flex-1 overflow-y-auto bg-t-panel p-4 text-xs leading-relaxed select-text" id="terminal-screen">
-                    <span class="text-t-faint" data-i18n="terminalInit">// awaiting request execution...</span>
+
+                <!-- QA Right Content (Hidden by default) -->
+                <div id="qa-right-content" class="hidden flex-col flex-1 overflow-hidden">
+                    <!-- QA Run Header -->
+                    <div class="px-4 h-8 flex items-center justify-between border-b border-t-border shrink-0 bg-t-subtle">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-t-cyan animate-pulse"></span>
+                            <span class="text-xs text-t-cyan uppercase tracking-widest font-semibold">Test Runner</span>
+                        </div>
+                        
+                        <div class="flex border border-t-border rounded overflow-hidden text-[9px] font-semibold bg-t-panel">
+                            <button id="qa-tab-btn-console" onclick="setQaRightTab('console')" class="px-2 py-0.5 bg-t-active-lang text-t-accent border-r border-t-border transition-all">Console</button>
+                            <button id="qa-tab-btn-report" onclick="setQaRightTab('report')" disabled class="px-2 py-0.5 text-t-dimmed hover:text-t-text transition-all disabled:opacity-30 disabled:cursor-not-allowed">Report</button>
+                        </div>
+                    </div>
+
+                    <!-- Live Metrics Row -->
+                    <div class="grid grid-cols-4 border-b border-t-border text-center bg-t-panel/60">
+                        <div class="py-2 border-e border-t-border">
+                            <div class="text-[10px] text-t-muted uppercase tracking-wider">Total</div>
+                            <div class="text-sm font-bold text-t-text" id="metric-total">0</div>
+                        </div>
+                        <div class="py-2 border-e border-t-border">
+                            <div class="text-[10px] text-t-muted uppercase tracking-wider">Passed</div>
+                            <div class="text-sm font-bold text-t-accent" id="metric-passed">0</div>
+                        </div>
+                        <div class="py-2 border-e border-t-border">
+                            <div class="text-[10px] text-t-muted uppercase tracking-wider">Failed</div>
+                            <div class="text-sm font-bold text-red-500" id="metric-failed">0</div>
+                        </div>
+                        <div class="py-2">
+                            <div class="text-[10px] text-t-muted uppercase tracking-wider">Success</div>
+                            <div class="text-sm font-bold text-t-cyan" id="metric-rate">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    <div class="w-full bg-t-border h-1 relative overflow-hidden shrink-0">
+                        <div id="qa-progress-bar" class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-t-cyan to-t-accent transition-all duration-150" style="width:0%;"></div>
+                    </div>
+
+                    <!-- QA Tab Content: Console -->
+                    <div id="qa-tab-content-console" class="flex-1 flex flex-col overflow-hidden">
+                        <div class="flex-1 overflow-y-auto bg-t-panel p-4 font-mono text-[11px] leading-relaxed select-text space-y-1" id="qa-runner-terminal">
+                            <span class="text-t-faint">// Select test types and generate a test plan to begin...</span>
+                        </div>
+                        
+                        <!-- Run Panel Footer -->
+                        <div class="p-3 border-t border-t-border bg-t-subtle flex items-center justify-between shrink-0">
+                            <span class="text-[10px] text-t-dimmed" id="qa-run-status">Awaiting Test Plan</span>
+                            <button id="qa-run-suite-btn" onclick="executeAutomationTestSuite()" disabled class="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold border transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed bg-t-panel border-t-accent/30 hover:border-t-accent/70 hover:shadow-[0_0_12px_var(--accent-glow)] text-t-accent">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+                                Run Test Suite
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- QA Tab Content: Beautiful Report (Hidden by default) -->
+                    <div id="qa-tab-content-report" class="hidden flex-1 flex flex-col overflow-hidden">
+                        <div class="flex-1 overflow-y-auto bg-t-panel p-4 text-xs leading-relaxed select-text max-w-none space-y-4" id="qa-report-viewer">
+                            <!-- Populated dynamically -->
+                        </div>
+                        
+                        <!-- Report Footer -->
+                        <div class="p-3 border-t border-t-border bg-t-subtle flex items-center justify-end gap-2 shrink-0">
+                            <button onclick="copyQaReportMarkdown()" class="flex items-center gap-1.5 px-3 py-1 text-[10px] text-t-muted hover:text-t-text hover:border-t-accent border border-t-border rounded-lg transition-all font-semibold bg-t-panel">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                Copy MD
+                            </button>
+                            <button onclick="downloadQaReportMarkdown()" class="flex items-center gap-1.5 px-3 py-1 text-[10px] text-t-cyan hover:text-white hover:border-t-cyan border border-t-cyan/40 rounded-lg transition-all font-semibold bg-t-panel">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                Download MD
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
         </div>
     </main>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         QA AUTHENTICATION PROMPT DIALOG
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="qa-auth-overlay" class="fixed inset-0 z-[60] hidden" aria-modal="true" role="dialog">
+        <div class="absolute inset-0 bg-black/85 backdrop-blur-md" onclick="closeQaAuthDialog()"></div>
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="relative w-full max-w-md flex flex-col rounded-2xl border border-t-border bg-t-panel p-5 shadow-2xl space-y-4">
+                <div class="flex items-center gap-2 pb-2 border-b border-t-border text-t-cyan">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    <span class="text-xs font-bold uppercase tracking-wider">Authentication Required</span>
+                </div>
+                <p class="text-xs text-t-text leading-relaxed">
+                    Some endpoints in your test plan require authentication. Please provide credentials to execute the suite.
+                </p>
+                <div class="space-y-3">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-t-muted uppercase tracking-wider font-semibold">Auth Type</label>
+                        <select id="modal-auth-type" onchange="toggleModalAuthFields()" class="w-full bg-t-panel border border-t-border rounded-lg text-xs text-t-cyan py-2 px-3 focus:outline-none focus:border-t-cyan font-mono cursor-pointer">
+                            <option value="none">none</option>
+                            <option value="bearer">bearer</option>
+                            <option value="basic">basic</option>
+                            <option value="apikey">apikey</option>
+                        </select>
+                    </div>
+                    <div id="modal-auth-fields-container" class="space-y-3">
+                        <!-- Filled dynamically -->
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-2 justify-end">
+                    <button onclick="closeQaAuthDialog()" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-t-border hover:bg-t-selected/20 text-t-muted transition-all">Cancel</button>
+                    <button onclick="runSuiteWithModalAuth(true)" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-transparent bg-red-500/20 hover:bg-red-500/40 text-red-400 transition-all">Skip Auth</button>
+                    <button onclick="runSuiteWithModalAuth(false)" class="px-4 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-t-cyan to-t-accent text-white border border-t-cyan/30 hover:shadow-[0_0_12px_rgba(34,211,238,0.2)] transition-all">Apply &amp; Run</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Loading Overlay -->
     <div id="loader-overlay" class="fixed inset-0 bg-t-bg/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
@@ -255,8 +568,238 @@
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════════
+         GENERATE UI DIALOG — Visual Page Builder
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="gen-ui-overlay" class="fixed inset-0 z-[60] hidden" aria-modal="true" role="dialog">
+        <div class="absolute inset-0 bg-black/80 backdrop-blur-lg" onclick="closeGenerateUiDialog()"></div>
+        <div class="absolute inset-0 flex items-start justify-center p-3 pt-4 pointer-events-none">
+            <div id="gen-ui-panel" class="pointer-events-auto relative w-full max-w-6xl flex flex-col rounded-2xl border border-t-border bg-t-panel shadow-2xl shadow-black overflow-hidden" style="max-height:92vh;animation:genUiSlideIn .3s cubic-bezier(0.16,1,0.3,1) both;">
+
+                <!-- Header -->
+                <div class="flex items-center justify-between px-5 py-3 border-b border-t-border shrink-0 bg-t-subtle">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500/70"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500/70"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-500/70"></span>
+                        </div>
+                        <span class="text-[10px] text-t-dimmed uppercase tracking-widest font-semibold select-none">UI Generator</span>
+                        <div class="flex border border-t-border rounded-lg overflow-hidden text-[9px] font-semibold bg-t-selected ml-2">
+                            <button id="gen-tab-visual" onclick="setGenTab('visual')" class="px-2.5 py-1 bg-t-selected text-t-accent transition-all">Visual Builder</button>
+                            <button id="gen-tab-ai" onclick="setGenTab('ai')" class="px-2.5 py-1 text-t-dimmed hover:text-t-text border-l border-t-border transition-all">AI Designer</button>
+                        </div>
+                        <span class="text-t-faint select-none">│</span>
+                        <div id="gen-ui-ep-badge" class="flex items-center gap-2"></div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <!-- Layout toggles -->
+                        <div id="gen-layout-toggles" class="flex items-center border border-t-border rounded-md overflow-hidden">
+                            <button class="gen-layout-btn px-2 py-1.5 text-t-dimmed hover:text-t-text transition-colors" data-layout="card" onclick="setGenLayout('card')" title="Card">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+                            </button>
+                            <button class="gen-layout-btn px-2 py-1.5 text-t-dimmed hover:text-t-text transition-colors border-x border-t-border" data-layout="grid" onclick="setGenLayout('grid')" title="Grid">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            </button>
+                            <button class="gen-layout-btn px-2 py-1.5 text-t-dimmed hover:text-t-text transition-colors" data-layout="wide" onclick="setGenLayout('wide')" title="Wide">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="12" rx="2"/></svg>
+                            </button>
+                        </div>
+                        <button onclick="closeGenerateUiDialog()" class="w-7 h-7 flex items-center justify-center rounded-lg border border-t-border text-t-muted hover:text-red-400 hover:border-red-500/40 transition-all duration-150">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Body: Canvas + Properties -->
+                <div class="flex overflow-hidden" style="flex:1;min-height:0;">
+
+                    <!-- LEFT: Canvas / Viewport -->
+                    <div class="overflow-y-auto p-6 flex flex-col items-center" id="gen-canvas-outer" style="flex:1;background:#0a0a0e;background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,0.025) 1px,transparent 0);background-size:24px 24px;">
+                        <!-- Visual Builder Canvas -->
+                        <div id="gen-canvas-wrapper" style="width:100%;max-width:460px;">
+                            <div id="gen-canvas" style="min-height:120px;"></div>
+                        </div>
+
+                        <!-- AI Viewport (Iframe) -->
+                        <div id="gen-ai-viewport-wrapper" class="hidden w-full h-full flex flex-col max-w-full transition-all duration-300" style="flex:1; min-height: 400px;">
+                            <div class="flex items-center justify-between bg-t-panel border border-t-border border-b-0 rounded-t-xl px-3 py-2 text-[10px] text-t-muted">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-t-cyan animate-pulse"></span>
+                                    <span>AI Live Interactive Viewport</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="resizeViewport('mobile')" class="hover:text-t-text font-mono text-[9px] px-1.5 py-0.5 bg-t-selected rounded border border-t-border transition-all">Mobile</button>
+                                    <button onclick="resizeViewport('tablet')" class="hover:text-t-text font-mono text-[9px] px-1.5 py-0.5 bg-t-selected rounded border border-t-border transition-all">Tablet</button>
+                                    <button onclick="resizeViewport('desktop')" class="hover:text-t-text font-mono text-[9px] px-1.5 py-0.5 bg-t-selected rounded border border-t-border transition-all">Desktop</button>
+                                </div>
+                            </div>
+                            <div class="w-full bg-white rounded-b-xl border border-t-border overflow-hidden flex-1 shadow-inner shadow-black/40" style="height:100%; min-height:350px;">
+                                <iframe id="gen-ai-frame" class="w-full h-full border-none bg-white" style="height:100%; min-height:350px;"></iframe>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Property Panel -->
+                    <div class="border-l border-t-border overflow-y-auto shrink-0 flex flex-col" id="gen-props-panel" style="width:280px;">
+
+                        <!-- Visual Builder Controls Container -->
+                        <div id="gen-visual-controls" class="flex flex-col flex-1">
+                            <!-- Global Style -->
+                            <div class="p-4 border-b border-t-border">
+                                <div class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold mb-3">Page Style</div>
+                                <div class="space-y-2.5">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-t-muted">Background</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 rounded border border-t-border overflow-hidden"><input type="color" id="gen-bg-color" value="#111113" class="w-8 h-8 -translate-x-1 -translate-y-1 cursor-pointer" onchange="updateGenGlobal('bgColor',this.value)"></div>
+                                            <code class="text-[10px] text-t-faint w-14" id="gen-bg-label">#111113</code>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-t-muted">Accent</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 rounded border border-t-border overflow-hidden"><input type="color" id="gen-accent-color" value="#22c55e" class="w-8 h-8 -translate-x-1 -translate-y-1 cursor-pointer" onchange="updateGenGlobal('accentColor',this.value)"></div>
+                                            <code class="text-[10px] text-t-faint w-14" id="gen-accent-label">#22c55e</code>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-t-muted">Text</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 rounded border border-t-border overflow-hidden"><input type="color" id="gen-text-color" value="#d4d4d8" class="w-8 h-8 -translate-x-1 -translate-y-1 cursor-pointer" onchange="updateGenGlobal('textColor',this.value)"></div>
+                                            <code class="text-[10px] text-t-faint w-14" id="gen-text-label">#d4d4d8</code>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-[11px] text-t-muted">Card BG</span>
+                                        <div class="flex items-center gap-2">
+                                            <div class="w-5 h-5 rounded border border-t-border overflow-hidden"><input type="color" id="gen-card-color" value="#18181b" class="w-8 h-8 -translate-x-1 -translate-y-1 cursor-pointer" onchange="updateGenGlobal('cardColor',this.value)"></div>
+                                            <code class="text-[10px] text-t-faint w-14" id="gen-card-label">#18181b</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Global Sliders -->
+                            <div class="p-4 border-b border-t-border">
+                                <div class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold mb-3">Global Spacing</div>
+                                <div class="space-y-3">
+                                    <div>
+                                        <div class="flex justify-between mb-1"><span class="text-[11px] text-t-muted">Card Radius</span><span class="text-[10px] text-t-accent font-mono" id="gen-card-radius-val">12px</span></div>
+                                        <input type="range" min="0" max="32" value="12" id="gen-card-radius" class="gen-slider w-full" oninput="updateGenGlobal('cardRadius',+this.value);document.getElementById('gen-card-radius-val').textContent=this.value+'px'">
+                                    </div>
+                                    <div>
+                                        <div class="flex justify-between mb-1"><span class="text-[11px] text-t-muted">Card Padding</span><span class="text-[10px] text-t-accent font-mono" id="gen-card-padding-val">24px</span></div>
+                                        <input type="range" min="8" max="48" value="24" id="gen-card-padding" class="gen-slider w-full" oninput="updateGenGlobal('cardPadding',+this.value);document.getElementById('gen-card-padding-val').textContent=this.value+'px'">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Block Properties (dynamic) -->
+                            <div class="p-4" id="gen-block-props">
+                                <div class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold mb-3">Selected Block</div>
+                                <div class="text-[11px] text-t-faint italic text-center py-4">Click a block to edit</div>
+                            </div>
+                        </div>
+
+                        <!-- AI Designer Controls Container -->
+                        <div id="gen-ai-controls" class="hidden p-4 flex flex-col gap-4 flex-1">
+                            <!-- Prompt Section -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold">Design Prompt</label>
+                                <textarea id="gen-ai-prompt" rows="6" class="w-full text-xs bg-t-selected border border-t-border rounded-lg p-2.5 text-t-text placeholder-t-faint focus:outline-none focus:border-t-accent resize-none transition-all" placeholder="E.g., A sleek dark mode profile card with high-tech neon highlights."></textarea>
+                            </div>
+
+                            <!-- Preset Prompt chips -->
+                            <div>
+                                <div class="text-[8px] uppercase tracking-widest text-t-faint font-bold mb-1.5">Preset Styles</div>
+                                <div class="flex flex-wrap gap-1">
+                                    <button onclick="applyPresetPrompt('Sleek Dark Mode Profile Card')" class="text-[9px] px-2 py-1 rounded bg-t-selected border border-t-border text-t-muted hover:text-t-text hover:border-t-accent transition-all font-medium">Sleek Dark</button>
+                                    <button onclick="applyPresetPrompt('Modern Glassmorphism Card')" class="text-[9px] px-2 py-1 rounded bg-t-selected border border-t-border text-t-muted hover:text-t-text hover:border-t-accent transition-all font-medium">Glassmorphism</button>
+                                    <button onclick="applyPresetPrompt('Clean Corporate Light Detail page')" class="text-[9px] px-2 py-1 rounded bg-t-selected border border-t-border text-t-muted hover:text-t-text hover:border-t-accent transition-all font-medium">Clean Light</button>
+                                    <button onclick="applyPresetPrompt('Vibrant Tech Dashboard widget')" class="text-[9px] px-2 py-1 rounded bg-t-selected border border-t-border text-t-muted hover:text-t-text hover:border-t-accent transition-all font-medium">Tech Widget</button>
+                                </div>
+                            </div>
+
+                            <!-- Model Selection -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold">AI Model</label>
+                                <select id="gen-ai-model" class="w-full text-xs bg-t-selected border border-t-border rounded-lg px-2.5 py-1.5 text-t-text focus:outline-none focus:border-t-accent transition-all">
+                                    <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B (Fast &amp; Reliable)</option>
+                                    <option value="moonshotai/kimi-k2.6">Kimi K2.6 (Detail-oriented but Slower)</option>
+                                </select>
+                            </div>
+
+                            <!-- API Key (Optional Override) -->
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold">API Key (Optional Override)</label>
+                                <input type="password" id="gen-ai-apikey" class="w-full text-xs bg-t-selected border border-t-border rounded-lg px-2.5 py-1.5 text-t-text placeholder-t-faint focus:outline-none focus:border-t-accent transition-all" placeholder="Using system API Key">
+                            </div>
+
+                            <div class="mt-2">
+                                <button id="gen-ai-btn" onclick="generateAiUi()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold tracking-wide text-white transition-all duration-200" style="background:linear-gradient(135deg,#a855f7,#3b82f6);" onmouseover="this.style.boxShadow='0 0 20px rgba(168,85,247,.4)'" onmouseout="this.style.boxShadow=''">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    Generate with AI
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="px-5 py-3 border-t border-t-border shrink-0 flex items-center justify-between gap-4 bg-t-subtle">
+                    <div class="flex items-center gap-2">
+                        <span id="gen-export-label" class="text-[10px] text-t-dimmed">Export:</span>
+                        <div id="gen-export-tabs-wrapper" class="flex border border-t-border rounded-lg overflow-hidden text-[10px]">
+                            <button id="export-tab-html" onclick="setExportTab('html')" class="px-3 py-1.5 font-semibold transition-all">HTML</button>
+                            <button id="export-tab-react" onclick="setExportTab('react')" class="px-3 py-1.5 font-semibold border-l border-t-border transition-all">React</button>
+                        </div>
+                        <button onclick="copyGenExport()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-t-border text-[10px] text-t-muted hover:text-t-text hover:border-t-accent transition-all font-semibold" id="gen-copy-btn">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            Copy
+                        </button>
+                    </div>
+                    <button id="gen-exec-preview-btn" onclick="executeAndPreviewGenUi()" class="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold tracking-wide border transition-all duration-200" style="background:linear-gradient(135deg,rgba(34,197,94,.18),rgba(34,211,238,.1));border-color:rgba(34,197,94,.4);color:var(--accent-green);" onmouseover="this.style.boxShadow='0 0 24px rgba(34,197,94,.3)';this.style.borderColor='rgba(34,197,94,.8)'" onmouseout="this.style.boxShadow='';this.style.borderColor='rgba(34,197,94,.4)'">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+                        Execute &amp; Preview
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes genUiSlideIn { from{opacity:0;transform:translateY(22px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+
+        /* Slider */
+        .gen-slider { -webkit-appearance:none; height:4px; border-radius:2px; background:var(--border-main); outline:none; cursor:pointer; }
+        .gen-slider::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent-green); cursor:pointer; box-shadow:0 0 6px rgba(34,197,94,.5); }
+        .gen-slider::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--accent-green); cursor:pointer; border:none; }
+
+        /* Toggle */
+        .bld-toggle { position:relative; display:inline-block; width:36px; height:20px; flex-shrink:0; }
+        .bld-toggle input { opacity:0; width:0; height:0; }
+        .bld-toggle-track { position:absolute; inset:0; border-radius:999px; background:var(--bg-selected); border:1px solid var(--border-main); transition:.2s; }
+        .bld-toggle input:checked + .bld-toggle-track { background:rgba(34,197,94,.25); border-color:rgba(34,197,94,.6); }
+        .bld-toggle-thumb { position:absolute; top:3px; left:3px; width:14px; height:14px; border-radius:50%; background:var(--text-dimmed); transition:.2s; }
+        .bld-toggle input:checked ~ .bld-toggle-thumb { transform:translateX(16px); background:var(--accent-green); }
+
+        /* Block wrapper hover/select */
+        .gen-blk { border-radius:8px; position:relative; cursor:pointer; transition:outline .1s; }
+        .gen-blk:hover .gen-drag-h { opacity:1 !important; }
+        .gen-drag-h { opacity:0; transition:opacity .15s; position:absolute; left:-20px; top:50%; transform:translateY(-50%); color:var(--text-faint); font-size:14px; cursor:grab; user-select:none; }
+        .gen-drop-line { height:2px; border-radius:1px; margin:2px 0; }
+
+        html.light #gen-canvas-outer { background:#f0f0f4; }
+    </style>
+
+
+
+    <!-- ══════════════════════════════════════════════════════════════════════
          SCRIPTING LAYER
          ══════════════════════════════════════════════════════════════════════ -->
+    {% verbatim %}
     <script>
         let currentApiSpec = null;
         let selectedEndpoint = null;
@@ -493,6 +1036,26 @@
                 if (!response.ok) throw new Error(data.error || 'Failed to parse schema.');
 
                 currentApiSpec = data;
+                
+                // Reset QA Automation variables
+                generatedTestPlan = null;
+                executionResults = [];
+                qaReportMarkdown = "";
+                const planContainer = document.getElementById('qa-test-plan-container');
+                if (planContainer) planContainer.classList.add('hidden');
+                setQaRunButtonsDisabled(true);
+                const repTab = document.getElementById('qa-tab-btn-report');
+                if (repTab) {
+                    repTab.disabled = true;
+                    repTab.classList.add('opacity-30', 'cursor-not-allowed');
+                }
+                const runStatus = document.getElementById('qa-run-status');
+                if (runStatus) runStatus.textContent = "Awaiting Test Plan";
+                if (typeof logToQaTerminal === 'function') {
+                    logToQaTerminal('clear');
+                    logToQaTerminal('info', `[READY] OpenAPI spec loaded: "${data.title}". Select test types and generate a test plan to start.`);
+                }
+                
                 renderEndpointTree(data);
                 updateHistoryList(url, data.title);
                 logToTerminal('success', `loaded: ${data.title} (v${data.version || '?'})`);
@@ -602,6 +1165,9 @@
             buttonEl.classList.add('bg-t-selected', 'border-t-border');
 
             selectedEndpoint = ep;
+            // Enable Generate UI button
+            const guiBtn = document.getElementById('generate-ui-btn');
+            if (guiBtn) { guiBtn.disabled = false; guiBtn.title = 'Generate UI for this endpoint'; }
             document.getElementById('active-api-info').innerText = `${currentApiSpec.title} — ${ep.summary || ep.path}`;
 
             const methodColors = {
@@ -854,6 +1420,625 @@
         function clearTerminal() { terminalScreen.innerHTML = ''; }
         function showLoader(show) { document.getElementById('loader-overlay').classList.toggle('hidden', !show); }
 
+        // ── GENERATE UI BUILDER ────────────────────────────────────────────────
+
+        // — State
+        let genBlocks = [];
+        let genGS = { bgColor:'#111113', accentColor:'#22c55e', textColor:'#d4d4d8', cardColor:'#18181b', cardRadius:12, cardPadding:24, layout:'card' };
+        let genSelId = null, genDragSrc = null, genCurEp = null, genExTab = 'html', genRealData = null;
+
+        // — Open / Close
+        function openGenerateUiDialog() {
+            if (!selectedEndpoint) return;
+            genCurEp = selectedEndpoint;
+            genRealData = null;
+            genSelId = null;
+            genGS = { bgColor:'#111113', accentColor:'#22c55e', textColor:'#d4d4d8', cardColor:'#18181b', cardRadius:12, cardPadding:24, layout:'card' };
+            genBlocks = buildGenBlocks(genCurEp.responseSchema);
+
+            // Header badge
+            const mc = {GET:'#22d3ee',POST:'#22c55e',PUT:'#f59e0b',DELETE:'#ef4444',PATCH:'#a855f7'};
+            const c = mc[genCurEp.method] || '#71717a';
+            document.getElementById('gen-ui-ep-badge').innerHTML =
+                `<span style="padding:.1rem .5rem;border-radius:.35rem;font-size:.6rem;font-weight:700;background:${c}1a;color:${c};border:1px solid ${c}40;">${genCurEp.method}</span>`+
+                `<code style="font-size:.7rem;color:var(--text-muted);">${genCurEp.path}</code>`+
+                (genCurEp.summary ? `<span style="font-size:.62rem;color:var(--text-dimmed);max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">— ${genCurEp.summary}</span>` : '');
+
+            syncGenPropsPanel();
+            renderGenCanvas();
+            setGenLayout('card');
+            setExportTab('html');
+
+            // Reset AI Designer elements
+            setGenTab('visual');
+            genAiHtml = '';
+            document.getElementById('gen-ai-prompt').value = '';
+            document.getElementById('gen-ai-frame').srcdoc = '';
+            resizeViewport('desktop');
+
+            const ov = document.getElementById('gen-ui-overlay');
+            ov.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            const p = document.getElementById('gen-ui-panel');
+            p.style.animation='none'; p.offsetHeight; p.style.animation='';
+        }
+        function closeGenerateUiDialog() {
+            document.getElementById('gen-ui-overlay').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // ── AI UI DESIGNER ────────────────────────────────────────────────
+        let currentGenTab = 'visual';
+        let genAiHtml = '';
+
+        function setGenTab(tab) {
+            currentGenTab = tab;
+            const tabVis = document.getElementById('gen-tab-visual');
+            const tabAi = document.getElementById('gen-tab-ai');
+            const canvasWrapper = document.getElementById('gen-canvas-wrapper');
+            const aiViewportWrapper = document.getElementById('gen-ai-viewport-wrapper');
+            const visControls = document.getElementById('gen-visual-controls');
+            const aiControls = document.getElementById('gen-ai-controls');
+            const exportLabel = document.getElementById('gen-export-label');
+            const exportTabs = document.getElementById('gen-export-tabs-wrapper');
+            const layoutToggles = document.getElementById('gen-layout-toggles');
+            
+            if (tab === 'visual') {
+                tabVis.className = "px-2.5 py-1 bg-t-selected text-t-accent transition-all";
+                tabAi.className = "px-2.5 py-1 text-t-dimmed hover:text-t-text border-l border-t-border transition-all";
+                canvasWrapper.classList.remove('hidden');
+                aiViewportWrapper.classList.add('hidden');
+                visControls.classList.remove('hidden');
+                aiControls.classList.add('hidden');
+                if(exportLabel) exportLabel.classList.remove('hidden');
+                if(exportTabs) exportTabs.classList.remove('hidden');
+                if(layoutToggles) layoutToggles.classList.remove('hidden');
+            } else {
+                tabVis.className = "px-2.5 py-1 text-t-dimmed hover:text-t-text transition-all";
+                tabAi.className = "px-2.5 py-1 bg-t-selected text-t-accent border-l border-t-border transition-all";
+                canvasWrapper.classList.add('hidden');
+                aiViewportWrapper.classList.remove('hidden');
+                visControls.classList.add('hidden');
+                aiControls.classList.remove('hidden');
+                if(exportLabel) exportLabel.classList.add('hidden');
+                if(exportTabs) exportTabs.classList.add('hidden');
+                if(layoutToggles) layoutToggles.classList.add('hidden');
+            }
+        }
+
+        function applyPresetPrompt(preset) {
+            document.getElementById('gen-ai-prompt').value = preset + " with a professional theme layout, high quality assets, stylish font, micro-interactions, responsive design padding.";
+        }
+
+        function resizeViewport(size) {
+            const frameWrapper = document.getElementById('gen-ai-viewport-wrapper');
+            if (size === 'mobile') {
+                frameWrapper.style.maxWidth = '410px';
+            } else if (size === 'tablet') {
+                frameWrapper.style.maxWidth = '768px';
+            } else {
+                frameWrapper.style.maxWidth = '100%';
+            }
+        }
+
+        async function generateAiUi() {
+            if (!genCurEp) return;
+            const promptVal = document.getElementById('gen-ai-prompt').value.trim();
+            if (!promptVal) {
+                logToTerminal('error', 'Please enter a prompt for the AI Designer.');
+                return;
+            }
+            const modelVal = document.getElementById('gen-ai-model').value;
+            const apiKeyVal = document.getElementById('gen-ai-apikey').value.trim();
+            const btn = document.getElementById('gen-ai-btn');
+            const origHtml = btn.innerHTML;
+            btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle;"></div> Generating...';
+            btn.disabled = true;
+            logToTerminal('info', `Generating AI UI using ${modelVal.split('/').pop()}...`);
+
+            try {
+                const response = await fetch('/generate-ai-ui/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: genCurEp.path,
+                        method: genCurEp.method,
+                        schema: genCurEp.responseSchema || {},
+                        prompt: promptVal,
+                        model: modelVal,
+                        api_key: apiKeyVal
+                    })
+                });
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+
+                genAiHtml = data.html;
+                const iframe = document.getElementById('gen-ai-frame');
+                iframe.srcdoc = genAiHtml;
+                logToTerminal('success', `✓ Successfully generated custom AI UI layout!`);
+            } catch (err) {
+                logToTerminal('error', `AI UI Gen error: ${err.message}`);
+            } finally {
+                btn.innerHTML = origHtml;
+                btn.disabled = false;
+            }
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGenerateUiDialog(); });
+
+        // — Schema → Blocks
+        function gUid() { return 'b_'+Math.random().toString(36).slice(2,8); }
+        function defBlkStyle() { return { borderRadius:8, padding:14, fontSize:13, visible:true }; }
+
+        function classifySchema(s) {
+            if (!s) return 'generic';
+            if (s.type === 'array') return (s.items?.properties || s.items?.type === 'object') ? 'table' : 'tags';
+            const keys = Object.keys(s.properties || {});
+            if (!keys.length) return 'generic';
+            const hasId   = keys.some(k => /^id$/i.test(k));
+            const hasName = keys.some(k => /^(name|username|full_?name|display_?name)$/i.test(k));
+            const hasEmail= keys.some(k => /email/i.test(k));
+            return (hasId && (hasName || hasEmail)) ? 'profile' : 'detail';
+        }
+
+        function detectBlkType(key, prop) {
+            const k = key.toLowerCase();
+            if (/^id$|uuid|guid/.test(k))              return 'id-badge';
+            if (/avatar|photo|picture|thumbnail/.test(k)) return 'avatar';
+            if (/^(name|username|full_?name|display_?name|first_?name|last_?name)$/.test(k)) return 'heading';
+            if (/email/.test(k))                        return 'email-chip';
+            if (/phone|tel|mobile/.test(k))             return 'phone-chip';
+            if (/^(url|link|website|href)$/.test(k))   return 'url-chip';
+            if (/date|created|updated|_at|timestamp/.test(k)) return 'date-chip';
+            if (/status|state|role|type/.test(k))      return 'status-badge';
+            if (/description|bio|about|content|body|summary|notes/.test(k)) return 'prose';
+            if (prop.type === 'boolean')                return 'bool-badge';
+            if (prop.type === 'integer' || prop.type === 'number') return 'stat-card';
+            if (prop.type === 'object' || prop.properties) return 'nested';
+            if (prop.type === 'array')                  return 'arr-list';
+            return 'field-row';
+        }
+
+        const SORT_PRI = (k) => {
+            if (/avatar|photo|picture/.test(k.toLowerCase())) return 0;
+            if (/^(name|username|full_?name|display_?name)$/.test(k.toLowerCase())) return 1;
+            if (/^id$/.test(k.toLowerCase())) return 2;
+            if (/email/.test(k.toLowerCase())) return 3;
+            if (/phone|tel/.test(k.toLowerCase())) return 4;
+            if (/status|role/.test(k.toLowerCase())) return 5;
+            return 10;
+        };
+
+        function buildGenBlocks(schema) {
+            if (!schema) return [{ id:gUid(), type:'placeholder', label:'No Schema', visible:true, style:defBlkStyle() }];
+            if (schema.type === 'array') {
+                const items = schema.items || {};
+                if (items.properties) return [{ id:gUid(), type:'table', schema:items, label:'Data Table', visible:true, style:defBlkStyle() }];
+                return [{ id:gUid(), type:'tags-list', schema, label:'Items', visible:true, style:defBlkStyle() }];
+            }
+            const props = schema.properties || {};
+            const req = schema.required || [];
+            const entries = Object.entries(props).sort((a,b) => SORT_PRI(a[0]) - SORT_PRI(b[0]));
+            const blocks = entries.map(([key, prop]) => ({
+                id: gUid(), type: detectBlkType(key, prop),
+                fieldName: key, fieldType: prop.type || 'string',
+                label: key.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase()),
+                description: prop.description || '',
+                required: req.includes(key),
+                mockValue: generateMockVal(key, prop),
+                realValue: null, enumValues: prop.enum || null,
+                visible: true, style: defBlkStyle()
+            }));
+            return blocks.length ? blocks : [{ id:gUid(), type:'placeholder', label:'Empty Schema', visible:true, style:defBlkStyle() }];
+        }
+
+        // — Canvas Render
+        function getDisplayVal(block) {
+            return (block.realValue !== null && block.realValue !== undefined) ? block.realValue : block.mockValue;
+        }
+
+        function renderGenCanvas() {
+            const canvas = document.getElementById('gen-canvas');
+            const wrapper = document.getElementById('gen-canvas-wrapper');
+            if (!canvas || !wrapper) return;
+            const gs = genGS;
+
+            // Wrapper max-width per layout
+            const mw = gs.layout==='card' ? '460px' : gs.layout==='grid' ? '600px' : '100%';
+            wrapper.style.cssText = `width:100%;max-width:${mw};margin:0 auto;`;
+
+            const gridCss = gs.layout==='grid' ? `display:grid;grid-template-columns:1fr 1fr;gap:10px;` : '';
+            canvas.style.cssText = `background:${gs.cardColor};border-radius:${gs.cardRadius}px;padding:${gs.cardPadding}px;border:1px solid rgba(255,255,255,.06);box-shadow:0 24px 64px rgba(0,0,0,.6);${gridCss}`;
+            canvas.innerHTML = '';
+
+            const vis = genBlocks.filter(b => b.visible);
+            if (!vis.length) {
+                canvas.innerHTML = `<div style="text-align:center;padding:32px;color:${gs.textColor}30;font-size:12px;">All blocks hidden</div>`;
+                return;
+            }
+
+            vis.forEach((block, visIdx) => {
+                const realIdx = genBlocks.indexOf(block);
+                // Divider (not in grid)
+                if (visIdx > 0 && gs.layout !== 'grid') {
+                    const hr = document.createElement('div');
+                    hr.style.cssText = `height:1px;background:${gs.textColor}07;margin:0 -${gs.cardPadding}px;`;
+                    canvas.appendChild(hr);
+                }
+                canvas.appendChild(buildBlkEl(block, realIdx, gs));
+            });
+
+            // Drop on canvas empty area (append to end)
+            canvas.ondragover = e => e.preventDefault();
+            canvas.ondrop = e => {
+                e.preventDefault();
+                document.querySelectorAll('.gen-drop-line').forEach(el => el.remove());
+                if (genDragSrc === null) return;
+                const moved = genBlocks.splice(genDragSrc, 1)[0];
+                genBlocks.push(moved);
+                genDragSrc = null;
+                renderGenCanvas();
+            };
+        }
+
+        function buildBlkEl(block, realIdx, gs) {
+            const isSel = block.id === genSelId;
+            const acc = gs.accentColor, txt = gs.textColor;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'gen-blk';
+            wrap.dataset.id = block.id;
+            wrap.dataset.idx = realIdx;
+            wrap.draggable = true;
+            wrap.style.cssText = `border-radius:${block.style.borderRadius}px;${isSel ? `outline:2px solid ${acc};outline-offset:2px;` : ''}`;
+
+            // Drag handle
+            const hdl = document.createElement('span');
+            hdl.className = 'gen-drag-h';
+            hdl.textContent = '⠿';
+            wrap.appendChild(hdl);
+
+            // Content
+            const inner = document.createElement('div');
+            inner.style.cssText = `padding:${block.style.padding}px;font-size:${block.style.fontSize}px;`;
+            inner.innerHTML = renderBlkContent(block, getDisplayVal(block), acc, txt);
+            wrap.appendChild(inner);
+
+            // Click = select
+            wrap.onclick = e => { e.stopPropagation(); selectGenBlock(block.id); };
+
+            // Drag
+            wrap.ondragstart = e => {
+                genDragSrc = realIdx;
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => wrap.style.opacity = '.35', 0);
+            };
+            wrap.ondragend = () => {
+                wrap.style.opacity = '1';
+                document.querySelectorAll('.gen-drop-line').forEach(el => el.remove());
+            };
+            wrap.ondragover = e => {
+                e.preventDefault(); e.stopPropagation();
+                document.querySelectorAll('.gen-drop-line').forEach(el => el.remove());
+                const mid = wrap.getBoundingClientRect().top + wrap.getBoundingClientRect().height / 2;
+                const line = document.createElement('div');
+                line.className = 'gen-drop-line';
+                line.style.background = acc;
+                e.clientY < mid ? wrap.parentNode.insertBefore(line, wrap) : wrap.parentNode.insertBefore(line, wrap.nextSibling);
+            };
+            wrap.ondrop = e => {
+                e.preventDefault(); e.stopPropagation();
+                document.querySelectorAll('.gen-drop-line').forEach(el => el.remove());
+                if (genDragSrc === null || genDragSrc === realIdx) return;
+                const mid = wrap.getBoundingClientRect().top + wrap.getBoundingClientRect().height / 2;
+                const before = e.clientY < mid;
+                const moved = genBlocks.splice(genDragSrc, 1)[0];
+                let ni = genBlocks.indexOf(block);
+                if (!before) ni++;
+                genBlocks.splice(ni, 0, moved);
+                genDragSrc = null;
+                renderGenCanvas();
+            };
+            return wrap;
+        }
+
+        // — Block Content Renderers
+        function renderBlkContent(block, val, acc, txt) {
+            const lbl = block.label || block.fieldName || '';
+            const v = val === null || val === undefined ? '—' : val;
+            switch(block.type) {
+                case 'avatar': {
+                    const ini = String(v).startsWith('http') ? '' : String(lbl).slice(0,2).toUpperCase();
+                    const img = String(v).startsWith('http') ? `<img src="${v}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : ini;
+                    return `<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0;">
+                        <div style="width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,${acc}28,${acc}55);border:2px solid ${acc}45;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:${acc};overflow:hidden;">${img}</div>
+                        <span style="font-size:9px;color:${txt}45;text-transform:uppercase;letter-spacing:.12em;">${lbl}</span></div>`;
+                }
+                case 'heading':
+                    return `<div style="font-size:22px;font-weight:800;color:${txt};letter-spacing:-.02em;text-align:center;padding:6px 0;">${v}</div>`;
+                case 'id-badge':
+                    return `<div style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:rgba(34,211,238,.1);border:1px solid rgba(34,211,238,.25);"><span style="font-size:10px;color:#22d3ee;font-weight:700;"># ${v}</span></div>`;
+                case 'email-chip':  return genChipHtml('\u2709', lbl, v, '#a78bfa', txt);
+                case 'phone-chip': return genChipHtml('\u260e', lbl, v, '#34d399', txt);
+                case 'date-chip':  return genChipHtml('\ud83d\udcc5', lbl, v, '#fb923c', txt);
+                case 'url-chip':
+                    return `<div style="display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:7px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">&#128279;</div><div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${txt}45;margin-bottom:2px;">${lbl}</div><span style="font-size:12px;color:#60a5fa;">${v}</span></div></div>`;
+                case 'status-badge': {
+                    const smap = {active:'#22c55e',inactive:'#ef4444',pending:'#f59e0b',disabled:'#71717a',enabled:'#22c55e',admin:'#a855f7',user:'#22d3ee',true:'#22c55e',false:'#ef4444'};
+                    const sc = smap[String(v).toLowerCase()] || acc;
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;color:${txt}55;text-transform:uppercase;letter-spacing:.08em;">${lbl}</span><span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:999px;background:${sc}18;border:1px solid ${sc}40;font-size:11px;font-weight:600;color:${sc};"><span style="width:5px;height:5px;border-radius:50%;background:${sc};"></span>${v}</span></div>`;
+                }
+                case 'bool-badge': {
+                    const isT = v===true||v==='true'; const bc = isT?'#22c55e':'#ef4444';
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;color:${txt}55;text-transform:uppercase;letter-spacing:.08em;">${lbl}</span><span style="padding:2px 10px;border-radius:999px;background:${bc}18;border:1px solid ${bc}40;font-size:11px;font-weight:700;color:${bc};">${isT?'true':'false'}</span></div>`;
+                }
+                case 'stat-card':
+                    return `<div style="text-align:center;padding:10px 0;"><div style="font-size:38px;font-weight:900;color:${acc};letter-spacing:-.03em;">${v}</div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:${txt}45;margin-top:4px;">${lbl}</div></div>`;
+                case 'prose':
+                    return `<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:${txt}35;margin-bottom:8px;font-weight:700;">${lbl}</div><p style="font-size:13px;line-height:1.75;color:${txt}75;">${v}</p></div>`;
+                case 'nested':
+                    return `<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:${txt}35;margin-bottom:6px;font-weight:700;">${lbl}</div><div style="padding:10px;border-radius:8px;background:${txt}05;border:1px solid ${txt}10;font-size:11px;color:${txt}40;">{&#8230; object}</div></div>`;
+                case 'arr-list':
+                    return `<div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:${txt}35;margin-bottom:8px;font-weight:700;">${lbl}</div><div style="display:flex;flex-wrap:wrap;gap:5px;">${Array(4).fill(0).map((_,i)=>`<span style="padding:2px 10px;border-radius:999px;background:${acc}14;border:1px solid ${acc}30;font-size:11px;color:${acc};">item_${i+1}</span>`).join('')}</div></div>`;
+                case 'tags-list':
+                    return `<div style="display:flex;flex-wrap:wrap;gap:6px;">${Array(5).fill(0).map((_,i)=>`<span style="padding:3px 12px;border-radius:999px;background:${acc}14;border:1px solid ${acc}30;font-size:12px;color:${acc};">tag_${i+1}</span>`).join('')}</div>`;
+                case 'table': {
+                    const props = block.schema?.properties || {};
+                    const keys = Object.keys(props).slice(0,6);
+                    const rows = Array(3).fill(0).map((_,i)=>`<tr>${keys.map(k=>`<td style="padding:7px 10px;font-size:11px;color:${txt}70;border-top:1px solid ${txt}08;">${generateMockVal(k,props[k])}</td>`).join('')}</tr>`).join('');
+                    return `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${keys.map(k=>`<th style="padding:7px 10px;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:${txt}40;border-bottom:1px solid ${txt}12;">${k.replace(/_/g,' ')}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table><div style="text-align:center;padding:5px;font-size:9px;color:${txt}25;">+ more rows</div></div>`;
+                }
+                case 'placeholder':
+                    return `<div style="text-align:center;padding:28px;color:${txt}28;"><div style="font-size:28px;margin-bottom:8px;">&#9889;</div><div style="font-size:12px;">No response schema</div><div style="font-size:10px;margin-top:4px;color:${txt}20;">Use Execute &amp; Preview to load real data</div></div>`;
+                default:
+                    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;"><span style="font-size:11px;color:${txt}50;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;">${lbl}</span><span style="font-size:12px;color:${txt};word-break:break-all;text-align:right;">${v}</span></div>`;
+            }
+        }
+
+        function genChipHtml(icon, lbl, val, color, txt) {
+            return `<div style="display:flex;align-items:center;gap:8px;"><div style="width:26px;height:26px;border-radius:7px;background:${color}18;border:1px solid ${color}30;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">${icon}</div><div><div style="font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:${txt}40;margin-bottom:2px;">${lbl}</div><div style="font-size:12px;color:${color};">${val}</div></div></div>`;
+        }
+
+        // — Block Selection + Property Panel
+        function selectGenBlock(id) {
+            genSelId = id;
+            renderGenCanvas();
+            renderGenBlockProps();
+        }
+
+        function renderGenBlockProps() {
+            const panel = document.getElementById('gen-block-props');
+            const block = genBlocks.find(b => b.id === genSelId);
+            if (!block) {
+                panel.innerHTML = `<div class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold mb-3">Selected Block</div><div class="text-[11px] text-t-faint italic text-center py-4">Click a block to edit</div>`;
+                return;
+            }
+            const bs = block.style;
+            panel.innerHTML = `
+                <div class="text-[9px] uppercase tracking-widest text-t-dimmed font-bold mb-3">Block: <span class="text-t-cyan font-semibold">${block.label||block.type}</span></div>
+                <div class="space-y-3">
+                    <div><div class="flex justify-between mb-1"><span class="text-[11px] text-t-muted">Border Radius</span><span class="text-[10px] text-t-accent font-mono" id="blk-r-v">${bs.borderRadius}px</span></div>
+                        <input type="range" min="0" max="24" value="${bs.borderRadius}" class="gen-slider w-full" oninput="updateBlkStyle('${block.id}','borderRadius',+this.value);document.getElementById('blk-r-v').textContent=this.value+'px'"></div>
+                    <div><div class="flex justify-between mb-1"><span class="text-[11px] text-t-muted">Padding</span><span class="text-[10px] text-t-accent font-mono" id="blk-p-v">${bs.padding}px</span></div>
+                        <input type="range" min="4" max="40" value="${bs.padding}" class="gen-slider w-full" oninput="updateBlkStyle('${block.id}','padding',+this.value);document.getElementById('blk-p-v').textContent=this.value+'px'"></div>
+                    <div><div class="flex justify-between mb-1"><span class="text-[11px] text-t-muted">Font Size</span><span class="text-[10px] text-t-accent font-mono" id="blk-f-v">${bs.fontSize}px</span></div>
+                        <input type="range" min="10" max="22" value="${bs.fontSize}" class="gen-slider w-full" oninput="updateBlkStyle('${block.id}','fontSize',+this.value);document.getElementById('blk-f-v').textContent=this.value+'px'"></div>
+                    <div class="flex items-center justify-between pt-2 border-t border-t-border">
+                        <span class="text-[11px] text-t-muted">Visible</span>
+                        <label class="bld-toggle"><input type="checkbox" ${block.visible?'checked':''} onchange="toggleGenBlk('${block.id}',this.checked)"><div class="bld-toggle-track"></div><div class="bld-toggle-thumb"></div></label>
+                    </div>
+                    <div class="flex gap-2 pt-1">
+                        <button onclick="moveGenBlk('${block.id}',-1)" class="flex-1 py-1.5 text-[10px] text-t-muted hover:text-t-text border border-t-border hover:border-t-accent rounded-lg transition-all">&uarr; Up</button>
+                        <button onclick="moveGenBlk('${block.id}',1)"  class="flex-1 py-1.5 text-[10px] text-t-muted hover:text-t-text border border-t-border hover:border-t-accent rounded-lg transition-all">&darr; Down</button>
+                    </div>
+                </div>`;
+        }
+
+        function updateBlkStyle(id, prop, val) {
+            const b = genBlocks.find(b => b.id === id);
+            if (b) { b.style[prop] = val; renderGenCanvas(); }
+        }
+        function toggleGenBlk(id, vis) {
+            const b = genBlocks.find(b => b.id === id);
+            if (b) { b.visible = vis; renderGenCanvas(); }
+        }
+        function moveGenBlk(id, dir) {
+            const i = genBlocks.findIndex(b => b.id === id);
+            const ni = i + dir;
+            if (i < 0 || ni < 0 || ni >= genBlocks.length) return;
+            [genBlocks[i], genBlocks[ni]] = [genBlocks[ni], genBlocks[i]];
+            renderGenCanvas(); renderGenBlockProps();
+        }
+
+        // — Global Controls
+        function updateGenGlobal(prop, val) {
+            genGS[prop] = val;
+            const labels = {bgColor:'gen-bg-label',accentColor:'gen-accent-label',textColor:'gen-text-label',cardColor:'gen-card-label'};
+            if (labels[prop]) { const el=document.getElementById(labels[prop]); if(el) el.textContent=val; }
+            renderGenCanvas();
+        }
+        function setGenLayout(layout) {
+            genGS.layout = layout;
+            document.querySelectorAll('.gen-layout-btn').forEach(btn => {
+                const on = btn.dataset.layout === layout;
+                btn.style.background = on ? 'rgba(34,197,94,.15)' : '';
+                btn.style.color = on ? 'var(--accent-green)' : '';
+            });
+            renderGenCanvas();
+        }
+        function syncGenPropsPanel() {
+            const gs = genGS;
+            [['gen-bg-color','gen-bg-label',gs.bgColor],['gen-accent-color','gen-accent-label',gs.accentColor],['gen-text-color','gen-text-label',gs.textColor],['gen-card-color','gen-card-label',gs.cardColor]]
+                .forEach(([inp,lbl,v]) => { const i=document.getElementById(inp),l=document.getElementById(lbl); if(i)i.value=v; if(l)l.textContent=v; });
+            const r=document.getElementById('gen-card-radius'), p=document.getElementById('gen-card-padding');
+            if(r){r.value=gs.cardRadius;document.getElementById('gen-card-radius-val').textContent=gs.cardRadius+'px';}
+            if(p){p.value=gs.cardPadding;document.getElementById('gen-card-padding-val').textContent=gs.cardPadding+'px';}
+        }
+
+        // Click canvas empty = deselect
+        document.getElementById('gen-canvas-outer').addEventListener('click', () => { genSelId=null; renderGenCanvas(); renderGenBlockProps(); });
+
+        // — Export Tab
+        function setExportTab(tab) {
+            genExTab = tab;
+            const h=document.getElementById('export-tab-html'), r=document.getElementById('export-tab-react');
+            h.style.cssText = tab==='html' ? 'background:rgba(34,197,94,.15);color:var(--accent-green);' : '';
+            r.style.cssText = tab==='react'? 'background:rgba(34,211,238,.15);color:var(--accent-cyan);' : '';
+        }
+
+        // — Copy Export
+        function copyGenExport() {
+            let code;
+            if (currentGenTab === 'ai') {
+                if (!genAiHtml) {
+                    logToTerminal('error', 'No AI-generated UI code available yet. Generate UI first.');
+                    return;
+                }
+                code = genAiHtml;
+            } else {
+                code = genExTab === 'html' ? exportGenAsHtml() : exportGenAsReact();
+            }
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = document.getElementById('gen-copy-btn');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 18 4 13"/></svg> Copied!';
+                btn.style.color = 'var(--accent-green)';
+                setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 2000);
+                logToTerminal('success', `✓ ${currentGenTab === 'ai' ? 'AI HTML' : genExTab.toUpperCase()} copied to clipboard`);
+            }).catch(() => logToTerminal('error', 'Clipboard access denied'));
+        }
+
+        // — HTML Export
+        function exportGenAsHtml() {
+            const gs = genGS, ep = genCurEp;
+            const vis = genBlocks.filter(b => b.visible);
+            const mw = gs.layout==='card'?'460px':gs.layout==='grid'?'600px':'100%';
+            const gridCss = gs.layout==='grid' ? 'display:grid;grid-template-columns:1fr 1fr;gap:10px;' : '';
+            let body = '';
+            vis.forEach((blk,i) => {
+                if (i>0 && gs.layout!=='grid') body += `<hr style="border:none;border-top:1px solid ${gs.textColor}07;margin:0 -${gs.cardPadding}px;">`;
+                body += `<div style="padding:${blk.style.padding}px;font-size:${blk.style.fontSize}px;border-radius:${blk.style.borderRadius}px;">${renderBlkContent(blk,getDisplayVal(blk),gs.accentColor,gs.textColor)}</div>`;
+            });
+            return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>${ep?.summary || ep?.path || 'Generated UI'}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:${gs.bgColor};font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+    .card{background:${gs.cardColor};border-radius:${gs.cardRadius}px;padding:${gs.cardPadding}px;max-width:${mw};width:100%;border:1px solid rgba(255,255,255,.06);box-shadow:0 24px 64px rgba(0,0,0,.5);${gridCss}}
+  </style>
+</head>
+<body>
+  <!-- Generated by OpenAPI Smart Simulator -->
+  <!-- Endpoint: ${ep?.method} ${ep?.path} -->
+  <div class="card">${body}</div>
+</body>
+</html>`;
+        }
+
+        // — React Export
+        function exportGenAsReact() {
+            const gs = genGS, ep = genCurEp;
+            const vis = genBlocks.filter(b => b.visible);
+            const name = (ep?.path||'Component').split('/').filter(Boolean)
+                .map(s=>s.replace(/[^a-zA-Z]/g,'').replace(/\b\w/,c=>c.toUpperCase())).filter(Boolean).join('') || 'GeneratedUI';
+            const mw = gs.layout==='card'?'460px':gs.layout==='grid'?'600px':'100%';
+            const gridStyle = gs.layout==='grid' ? `display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', ` : '';
+
+            const fields = vis.filter(b=>b.fieldName).map(b => `  const ${b.fieldName} = data?.${b.fieldName};`).join('\n');
+
+            const items = vis.map((blk) => {
+                const fv = blk.fieldName ? `data?.${blk.fieldName} ?? "${blk.mockValue}"` : `"${blk.mockValue}"`;
+                switch(blk.type) {
+                    case 'avatar':    return `      <AvatarBlock label="${blk.label}" value={${fv}} accent="${gs.accentColor}" textColor="${gs.textColor}" />`;
+                    case 'heading':   return `      <h1 style={{fontSize:'22px',fontWeight:800,color:'${gs.textColor}',textAlign:'center',padding:'${blk.style.padding}px 0'}}>{${fv}}</h1>`;
+                    case 'id-badge':  return `      <span style={{display:'inline-flex',padding:'3px 10px',borderRadius:'999px',background:'rgba(34,211,238,.1)',border:'1px solid rgba(34,211,238,.25)',fontSize:'10px',color:'#22d3ee',fontWeight:700}}># {${fv}}</span>`;
+                    case 'stat-card': return `      <div style={{textAlign:'center',padding:'10px 0'}}><div style={{fontSize:'38px',fontWeight:900,color:'${gs.accentColor}'}}>{${fv}}</div><div style={{fontSize:'10px',textTransform:'uppercase',letterSpacing:'.12em',color:'${gs.textColor}45',marginTop:'4px'}}>${blk.label}</div></div>`;
+                    case 'bool-badge':return `      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}><span style={{fontSize:'11px',color:'${gs.textColor}55',textTransform:'uppercase'}}>${blk.label}</span><span style={{padding:'2px 10px',borderRadius:'999px',background:${fv}?'rgba(34,197,94,.15)':'rgba(239,68,68,.15)',color:${fv}?'#22c55e':'#ef4444'}}>{String(${fv})}</span></div>`;
+                    default:          return `      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'${blk.style.padding}px 0',fontSize:'${blk.style.fontSize}px'}}><span style={{color:'${gs.textColor}50',textTransform:'uppercase',fontSize:'11px'}}>${blk.label}</span><span style={{color:'${gs.textColor}'}}>{${fv}}</span></div>`;
+                }
+            }).join('\n');
+
+            return `import React from 'react';
+
+/**
+ * Generated UI Component
+ * Endpoint: ${ep?.method} ${ep?.path}
+ * Summary:  ${ep?.summary||'—'}
+ * Generated by OpenAPI Smart Simulator
+ */
+const ${name} = ({ data }) => {
+  return (
+    <div style={{ background: '${gs.bgColor}', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', fontFamily: "system-ui,-apple-system,sans-serif" }}>
+      <div style={{ background: '${gs.cardColor}', borderRadius: '${gs.cardRadius}px', padding: '${gs.cardPadding}px', maxWidth: '${mw}', width: '100%', border: '1px solid rgba(255,255,255,.06)', boxShadow: '0 24px 64px rgba(0,0,0,.5)', ${gridStyle}}}>
+${items}
+      </div>
+    </div>
+  );
+};
+
+export default ${name};`;
+        }
+
+        // — Execute & Preview (in-place canvas update)
+        async function executeAndPreviewGenUi() {
+            if (!genCurEp || !currentApiSpec) return;
+            const btn = document.getElementById('gen-exec-preview-btn');
+            btn.innerHTML = '<div style="width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle;"></div> Fetching...';
+            btn.disabled = true;
+
+            try {
+                let path = genCurEp.path;
+                // Fill path params with mock values from blocks
+                genBlocks.forEach(b => { if (b.fieldName) path = path.replace(`{${b.fieldName}}`, encodeURIComponent(b.mockValue ?? '1')); });
+
+                const base = currentApiSpec.baseUrl.replace(/\/$/, '');
+                const url  = base + '/' + path.replace(/^\//, '');
+
+                const headers = {};
+                const authType = document.getElementById('global-auth-type')?.value;
+                if (authType === 'bearer') { const t=document.getElementById('global-auth-bearer-token')?.value?.trim(); if(t) headers['Authorization']=`Bearer ${t}`; }
+                else if (authType === 'basic') { const u=document.getElementById('global-auth-basic-username')?.value||'',p=document.getElementById('global-auth-basic-password')?.value||''; try{headers['Authorization']=`Basic ${btoa(u+':'+p)}`;}catch(e){} }
+                else if (authType === 'apikey') { const n=document.getElementById('global-auth-apikey-name')?.value,v=document.getElementById('global-auth-apikey-val')?.value; if(n&&v) headers[n]=v; }
+
+                const resp = await fetch('/proxy-request/', {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({url, method:genCurEp.method, headers, body:null})
+                });
+                const data = await resp.json();
+                if (data.error) throw new Error(data.error);
+
+                genRealData = data.body;
+                
+                if (currentGenTab === 'ai') {
+                    const iframe = document.getElementById('gen-ai-frame');
+                    if (iframe && iframe.contentWindow && typeof iframe.contentWindow.updateData === 'function') {
+                        iframe.contentWindow.updateData(genRealData);
+                        logToTerminal('success', `✓ Execute & Preview: Updated AI UI viewport with real data`);
+                    } else {
+                        logToTerminal('warning', `API response received, but the generated HTML does not expose a window.updateData function.`);
+                    }
+                } else {
+                    // Inject real values into blocks
+                    if (genRealData && typeof genRealData === 'object' && !Array.isArray(genRealData)) {
+                        genBlocks.forEach(b => {
+                            if (b.fieldName && genRealData[b.fieldName] !== undefined)
+                                b.realValue = genRealData[b.fieldName];
+                        });
+                    }
+                    renderGenCanvas();
+                    logToTerminal('success', `\u2713 Execute & Preview: HTTP ${data.status_code} \u2014 canvas updated with real data`);
+                }
+            } catch(err) {
+                logToTerminal('error', `Generate UI preview: ${err.message}`);
+            } finally {
+                btn.innerHTML = '<svg style="width:14px;height:14px" fill="none" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg> Execute &amp; Preview';
+                btn.disabled = false;
+            }
+        }
+
         // ── JSON Syntax Highlighter ──────────────────────────────────────
         function syntaxHighlight(obj) {
             let json = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
@@ -875,6 +2060,829 @@
                 }
             );
         }
+
+        // ── QA AUTOMATION SUITE ENGINE ─────────────────────────────────────
+        let currentMode = 'playground';
+        let generatedTestPlan = null;
+        let executionResults = [];
+        let qaReportMarkdown = "";
+
+        function setQaRunButtonsDisabled(disabled) {
+            const btn1 = document.getElementById('qa-run-suite-btn');
+            const btn2 = document.getElementById('qa-center-run-btn');
+            if (btn1) btn1.disabled = disabled;
+            if (btn2) btn2.disabled = disabled;
+        }
+
+        function switchMode(mode) {
+            currentMode = mode;
+            const btnPlay = document.getElementById('mode-btn-playground');
+            const btnQa = document.getElementById('mode-btn-qa');
+            const pgCenter = document.getElementById('playground-center-content');
+            const qaCenter = document.getElementById('qa-center-content');
+            const pgRight = document.getElementById('playground-right-content');
+            const qaRight = document.getElementById('qa-right-content');
+
+            if (mode === 'playground') {
+                btnPlay.className = "px-2 py-0.5 text-xs bg-t-active-lang text-t-accent border-r border-t-border transition-all flex items-center gap-1";
+                btnQa.className = "px-2 py-0.5 text-xs text-t-muted hover:text-t-text transition-all flex items-center gap-1";
+                pgCenter.classList.remove('hidden');
+                qaCenter.classList.add('hidden');
+                pgRight.classList.remove('hidden');
+                qaRight.classList.add('hidden');
+            } else {
+                btnPlay.className = "px-2 py-0.5 text-xs text-t-muted hover:text-t-text border-r border-t-border transition-all flex items-center gap-1";
+                btnQa.className = "px-2 py-0.5 text-xs bg-t-active-lang text-t-accent transition-all flex items-center gap-1";
+                pgCenter.classList.add('hidden');
+                qaCenter.classList.remove('hidden');
+                pgRight.classList.add('hidden');
+                qaRight.classList.remove('hidden');
+                
+                // If spec is loaded but plan is empty, prompt user
+                if (currentApiSpec && !generatedTestPlan) {
+                    logToQaTerminal('clear');
+                    logToQaTerminal('info', `[READY] OpenAPI spec loaded: "${currentApiSpec.title}". Select test types and generate a test plan to start.`);
+                } else if (!currentApiSpec) {
+                    logToQaTerminal('clear');
+                    logToQaTerminal('error', `[AWAITING SCHEMA] Please load a Swagger/OpenAPI URL in the fetch bar first.`);
+                }
+            }
+        }
+
+        function setQaRightTab(tab) {
+            const btnConsole = document.getElementById('qa-tab-btn-console');
+            const btnReport = document.getElementById('qa-tab-btn-report');
+            const conContent = document.getElementById('qa-tab-content-console');
+            const repContent = document.getElementById('qa-tab-content-report');
+
+            if (tab === 'console') {
+                btnConsole.className = "px-2 py-0.5 bg-t-active-lang text-t-accent border-r border-t-border transition-all";
+                btnReport.className = "px-2 py-0.5 text-t-dimmed hover:text-t-text transition-all";
+                conContent.classList.remove('hidden');
+                repContent.classList.add('hidden');
+            } else {
+                btnConsole.className = "px-2 py-0.5 text-t-dimmed hover:text-t-text border-r border-t-border transition-all";
+                btnReport.className = "px-2 py-0.5 bg-t-active-lang text-t-accent transition-all";
+                conContent.classList.add('hidden');
+                repContent.classList.remove('hidden');
+            }
+        }
+
+        function logToQaTerminal(type, text) {
+            const container = document.getElementById('qa-runner-terminal');
+            if (type === 'clear') {
+                container.innerHTML = '';
+                return;
+            }
+            
+            if (type === 'token') {
+                let lastSpan = container.lastElementChild;
+                if (!lastSpan || !lastSpan.classList.contains('qa-stream-token-block')) {
+                    lastSpan = document.createElement('span');
+                    lastSpan.className = 'qa-stream-token-block text-t-text/80 font-mono block whitespace-pre-wrap mt-2 mb-2 p-3 bg-t-selected/20 border border-t-border-subtle rounded-lg max-h-48 overflow-y-auto';
+                    container.appendChild(lastSpan);
+                }
+                lastSpan.textContent += text;
+                lastSpan.scrollTop = lastSpan.scrollHeight;
+                container.scrollTop = container.scrollHeight;
+                return;
+            }
+            
+            const div = document.createElement('div');
+            if (type === 'error') div.className = 'text-red-500 font-semibold';
+            else if (type === 'success') div.className = 'text-t-accent font-semibold';
+            else if (type === 'info') div.className = 'text-t-muted';
+            else if (type === 'warning') div.className = 'text-amber-500 font-semibold';
+            else div.className = 'text-t-text';
+            
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function generateAutomationTestPlan() {
+            if (!currentApiSpec) {
+                logToQaTerminal('error', 'Please fetch and parse an OpenAPI schema first.');
+                alert('Please fetch and parse an OpenAPI schema first.');
+                return;
+            }
+
+            const checkedBoxes = document.querySelectorAll('input[name="qa-test-type"]:checked');
+            const testTypes = Array.from(checkedBoxes).map(cb => cb.value);
+            
+            if (testTypes.length === 0) {
+                alert('Please select at least one test type.');
+                return;
+            }
+
+            const genPlanBtn = document.getElementById('qa-generate-plan-btn');
+            if (genPlanBtn) {
+                genPlanBtn.disabled = true;
+                genPlanBtn.innerHTML = `
+                    <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                    Generating...
+                `;
+            }
+            logToQaTerminal('clear');
+            logToQaTerminal('info', `=========================================`);
+            logToQaTerminal('info', `AI TEST PLANNER INITIALIZED (STREAMING MODE)`);
+            logToQaTerminal('info', `Model: moonshotai/kimi-k2.6`);
+            logToQaTerminal('info', `Generating plan for: "${currentApiSpec.title}"`);
+            logToQaTerminal('info', `=========================================`);
+
+            try {
+                const response = await fetch('/generate-test-plan/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        endpoints: currentApiSpec.endpoints,
+                        test_types: testTypes
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
+                    
+                    for (let line of lines) {
+                        line = line.trim();
+                        if (line.startsWith("data: ")) {
+                            try {
+                                const event = JSON.parse(line.slice(6));
+                                if (event.type === 'status') {
+                                    logToQaTerminal('info', `\n[Planner Status] ${event.message}`);
+                                } else if (event.type === 'token') {
+                                    logToQaTerminal('token', event.content);
+                                } else if (event.type === 'chunk_done') {
+                                    logToQaTerminal('success', `\n✓ Section processing success.`);
+                                } else if (event.type === 'final_plan') {
+                                    generatedTestPlan = event.plan;
+                                    renderVisualTestPlan();
+                                    
+                                    if (event.plan.ai_calls && event.plan.ai_calls.length > 0) {
+                                        event.plan.ai_calls.forEach((call, index) => {
+                                            logToQaTerminal('info', `\n[AI API CALL ${index+1}/${event.plan.ai_calls.length}] POST ${event.plan.ai_request_url}`);
+                                            logToQaTerminal('info', `[REQUEST BODY]\n${JSON.stringify(call.request_body, null, 2)}`);
+                                            logToQaTerminal('info', `\n[RESPONSE BODY]\n${JSON.stringify({message: "Stream completed successfully"}, null, 2)}`);
+                                            logToQaTerminal('info', `-----------------------------------------\n`);
+                                        });
+                                    }
+                                    
+                                    logToQaTerminal('success', `\n✓ AI Test plan compiled successfully with ${event.plan.steps.length} steps.`);
+                                    setQaRunButtonsDisabled(false);
+                                    document.getElementById('qa-run-status').textContent = "Ready to Run";
+                                }
+                            } catch (e) {
+                                console.error("Error parsing plan SSE event", e);
+                            }
+                        }
+                    }
+                }
+            } catch (err) {
+                logToQaTerminal('error', `Plan generation failed: ${err.message}`);
+            } finally {
+                if (genPlanBtn) {
+                    genPlanBtn.disabled = false;
+                    genPlanBtn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                        Generate Test Plan
+                    `;
+                }
+            }
+        }
+
+        function renderVisualTestPlan() {
+            const container = document.getElementById('qa-test-plan-container');
+            const summaryEl = document.getElementById('qa-plan-summary');
+            const countEl = document.getElementById('qa-plan-step-count');
+            const listEl = document.getElementById('qa-plan-steps-list');
+
+            container.classList.remove('hidden');
+            summaryEl.innerHTML = `<span class="text-t-accent font-semibold">AI Plan Summary:</span> ${generatedTestPlan.test_plan_summary}`;
+            countEl.textContent = `${generatedTestPlan.steps.length} Steps`;
+            listEl.innerHTML = '';
+
+            generatedTestPlan.steps.forEach(step => {
+                const stepDiv = document.createElement('div');
+                stepDiv.className = 'p-3 rounded-lg border border-t-border bg-t-panel/80 hover:border-t-cyan/40 hover:bg-t-selected/20 transition-all flex items-start justify-between text-xs gap-3';
+                
+                const methodColors = {
+                    GET: 'text-t-cyan bg-t-cyan/5 border-t-cyan/20',
+                    POST: 'text-t-accent bg-t-accent/5 border-t-accent/20',
+                    PUT: 'text-amber-500 bg-amber-500/5 border-amber-500/20',
+                    DELETE: 'text-red-500 bg-red-500/5 border-red-500/20',
+                    PATCH: 'text-purple-500 bg-purple-505/5 border-purple-500/20'
+                };
+                const mColor = methodColors[step.method] || 'text-t-muted bg-t-panel border-t-border';
+                
+                stepDiv.innerHTML = `
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-[10px] text-t-dimmed font-mono">#${step.id}</span>
+                            <span class="font-bold text-[10px] px-1.5 py-0.2 rounded border ${mColor}">${step.method}</span>
+                            <span class="text-t-text font-mono text-xs select-all font-semibold">${step.endpoint}</span>
+                        </div>
+                        <p class="text-xs text-t-text leading-relaxed mt-1 mb-1 bg-t-panel/40 p-2 rounded border border-t-border-subtle">${step.description}</p>
+                        <div class="flex items-center gap-2 mt-1.5">
+                            <span class="text-[9px] text-t-cyan bg-t-cyan/10 px-1.5 py-0.2 rounded border border-t-cyan/20 font-semibold">${step.test_type}</span>
+                            <span class="text-[9px] text-t-faint">Est. reqs: ${step.estimated_requests}</span>
+                        </div>
+                    </div>
+                    <button onclick="removePlanStep(${step.id})" class="text-t-muted hover:text-red-500 text-xs font-mono shrink-0 select-none px-1" title="Remove Step">[x]</button>
+                `;
+                listEl.appendChild(stepDiv);
+            });
+        }
+
+        function removePlanStep(stepId) {
+            if (!generatedTestPlan) return;
+            generatedTestPlan.steps = generatedTestPlan.steps.filter(s => s.id !== stepId);
+            renderVisualTestPlan();
+            logToQaTerminal('info', `Removed step #${stepId} from plan.`);
+            if (generatedTestPlan.steps.length === 0) {
+                setQaRunButtonsDisabled(true);
+                document.getElementById('qa-run-status').textContent = "No Steps in Plan";
+            }
+        }
+
+        async function executeAutomationTestSuite(bypassAuthPrompt = false) {
+            if (!generatedTestPlan || !generatedTestPlan.steps || generatedTestPlan.steps.length === 0) {
+                alert('No steps to execute. Please generate a test plan first.');
+                return;
+            }
+
+            // 1. Credentials Prompt Check
+            if (!bypassAuthPrompt) {
+                const hasAuthReq = generatedTestPlan.required_inputs && 
+                    generatedTestPlan.required_inputs.some(ri => ri.type === 'auth_token_or_credentials');
+                
+                if (hasAuthReq) {
+                    const authType = document.getElementById('global-auth-type')?.value || 'none';
+                    let credsMissing = false;
+                    
+                    if (authType === 'none') {
+                        credsMissing = true;
+                    } else if (authType === 'bearer') {
+                        const token = document.getElementById('global-auth-bearer-token')?.value?.trim();
+                        if (!token) credsMissing = true;
+                    } else if (authType === 'basic') {
+                        const u = document.getElementById('global-auth-basic-username')?.value?.trim();
+                        const p = document.getElementById('global-auth-basic-password')?.value;
+                        if (!u && !p) credsMissing = true;
+                    } else if (authType === 'apikey') {
+                        const n = document.getElementById('global-auth-apikey-name')?.value?.trim();
+                        const v = document.getElementById('global-auth-apikey-val')?.value?.trim();
+                        if (!n || !v) credsMissing = true;
+                    }
+                    
+                    if (credsMissing) {
+                        openQaAuthDialog();
+                        return;
+                    }
+                }
+            }
+
+            const steps = generatedTestPlan.steps;
+            const totalSteps = steps.length;
+            let passedCount = 0;
+            let failedCount = 0;
+            
+            // UI setup
+            logToQaTerminal('clear');
+            logToQaTerminal('info', `=========================================`);
+            logToQaTerminal('info', `🚀 STARTING AUTOMATED TEST SUITE EXECUTION`);
+            logToQaTerminal('info', `=========================================`);
+            logToQaTerminal('info', `Target Base URL: ${currentApiSpec.baseUrl}`);
+            
+            setQaRunButtonsDisabled(true);
+            document.getElementById('qa-tab-btn-report').disabled = true;
+            setQaRightTab('console');
+            
+            executionResults = [];
+            
+            for (let i = 0; i < totalSteps; i++) {
+                const step = steps[i];
+                const progress = Math.round(((i) / totalSteps) * 100);
+                
+                // Update progress bar & counts
+                document.getElementById('qa-progress-bar').style.width = `${progress}%`;
+                document.getElementById('metric-total').textContent = `${i}`;
+                document.getElementById('metric-passed').textContent = `${passedCount}`;
+                document.getElementById('metric-failed').textContent = `${failedCount}`;
+                document.getElementById('metric-rate').textContent = `${i > 0 ? Math.round((passedCount / i) * 100) : 0}%`;
+                document.getElementById('qa-run-status').textContent = `Running step ${i+1}/${totalSteps}...`;
+
+                logToQaTerminal('info', `\n[Step ${i+1}/${totalSteps}] Running ${step.test_type} on ${step.method} ${step.endpoint}...`);
+                
+                let result = {
+                    id: step.id,
+                    endpoint: step.endpoint,
+                    method: step.method,
+                    test_type: step.test_type,
+                    status: 'passed',
+                    details: ''
+                };
+                
+                try {
+                    const epMeta = currentApiSpec.endpoints.find(e => e.path === step.endpoint && e.method === step.method);
+                    let absoluteUrl = currentApiSpec.baseUrl.replace(/\/$/, '') + '/' + step.endpoint.replace(/^\//, '');
+                    
+                    if (epMeta && epMeta.parameters) {
+                        epMeta.parameters.forEach(p => {
+                            if (p.in === 'path') {
+                                let val = p.default ?? "1";
+                                if (step.test_type === 'Responses Expectations Test' && p.type === 'integer') {
+                                    val = "invalid_string_id";
+                                }
+                                absoluteUrl = absoluteUrl.replace(`{${p.name}}`, encodeURIComponent(val));
+                            }
+                        });
+                    }
+
+                    const headers = {};
+                    let bodyPayload = null;
+
+                    if (step.test_type !== 'Authentication Test') {
+                        const authType = document.getElementById('global-auth-type')?.value;
+                        if (authType === 'bearer') {
+                            const t = document.getElementById('global-auth-bearer-token')?.value?.trim();
+                            if (t) headers['Authorization'] = `Bearer ${t}`;
+                        } else if (authType === 'basic') {
+                            const u = document.getElementById('global-auth-basic-username')?.value?.trim() || '';
+                            const p = document.getElementById('global-auth-basic-password')?.value || '';
+                            if (u || p) { try { headers['Authorization'] = `Basic ${btoa(u + ':' + p)}`; } catch(e) {} }
+                        } else if (authType === 'apikey') {
+                            const n = document.getElementById('global-auth-apikey-name')?.value?.trim();
+                            const v = document.getElementById('global-auth-apikey-val')?.value?.trim();
+                            if (n && v) headers[n] = v;
+                        }
+                    }
+
+                    if (epMeta && epMeta.requestBody) {
+                        headers['Content-Type'] = epMeta.requestBody.mediaType || 'application/json';
+                        let bodyObj = generateMockDataFromSchema(epMeta.requestBody.schema);
+                        
+                        if (step.test_type === 'Responses Expectations Test') {
+                            if (bodyObj && typeof bodyObj === 'object') {
+                                const schema = epMeta.requestBody.schema || {};
+                                const reqs = schema.required || [];
+                                if (reqs.length > 0) {
+                                    delete bodyObj[reqs[0]];
+                                } else {
+                                    bodyObj = null;
+                                }
+                            }
+                        } else if (step.test_type === 'Security & Injection Test') {
+                            if (bodyObj && typeof bodyObj === 'object') {
+                                for (let key in bodyObj) {
+                                    if (typeof bodyObj[key] === 'string') {
+                                        bodyObj[key] = "' OR '1'='1' -- <script>alert(1)<\/script>";
+                                        break;
+                                    }
+                                }
+                            } else {
+                                bodyObj = "' OR 1=1";
+                            }
+                        }
+                        bodyPayload = bodyObj;
+                    }
+
+                    const reqStart = Date.now();
+                    const proxyResp = await fetch('/proxy-request/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            url: absoluteUrl,
+                            method: step.method,
+                            headers: headers,
+                            body: bodyPayload
+                        })
+                    });
+                    const resData = await proxyResp.json();
+                    const reqElapsed = Date.now() - reqStart;
+
+                    if (resData.error) {
+                        result.status = 'failed';
+                        result.details = `Network Error: ${resData.error}`;
+                    } else {
+                        const status = resData.status_code;
+                        
+                        if (step.test_type === 'Authentication Test') {
+                            if (status === 401 || status === 403) {
+                                result.status = 'passed';
+                                result.details = `Blocked correctly with HTTP ${status} Unauthorized/Forbidden.`;
+                            } else {
+                                result.status = 'failed';
+                                result.details = `Security Risk: Private endpoint returned HTTP ${status} without credentials.`;
+                            }
+                        } else if (step.test_type === 'Responses Expectations Test') {
+                            if (status === 500) {
+                                result.status = 'failed';
+                                result.details = `Stability Issue: Server crashed (HTTP 500) under validation payload.`;
+                            } else if (status >= 400 && status < 500) {
+                                result.status = 'passed';
+                                result.details = `Correctly returned verification status HTTP ${status}.`;
+                            } else {
+                                result.status = 'passed';
+                                result.details = `Returned status HTTP ${status} under invalid inputs.`;
+                            }
+                        } else if (step.test_type === 'Security & Injection Test') {
+                            if (status === 500) {
+                                result.status = 'failed';
+                                result.details = `Vulnerability Risk: Server threw HTTP 500 on injection payloads.`;
+                            } else if (status >= 400 && status < 500) {
+                                result.status = 'passed';
+                                result.details = `Correctly blocked SQLi/XSS inputs with HTTP ${status}.`;
+                            } else {
+                                result.status = 'passed';
+                                result.details = `Safely handled injection input returning HTTP ${status}.`;
+                            }
+                        } else if (step.test_type === 'Performance/Latency Test') {
+                            let latencies = [reqElapsed];
+                            let perfOk = true;
+                            let perfErrors = 0;
+                            
+                            for (let j = 1; j < 10; j++) {
+                                const subStart = Date.now();
+                                const subResp = await fetch('/proxy-request/', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ url: absoluteUrl, method: step.method, headers: headers, body: bodyPayload })
+                                });
+                                const subResData = await subResp.json();
+                                latencies.push(Date.now() - subStart);
+                                if (subResData.status_code >= 500 || subResData.error) perfErrors++;
+                            }
+                            
+                            const avgLatency = Math.round(latencies.reduce((a,b)=>a+b, 0)/latencies.length);
+                            if (avgLatency > 500) {
+                                result.status = 'failed';
+                                result.details = `Latency Limit Exceeded: Average latency is ${avgLatency}ms (exceeds 500ms baseline).`;
+                            } else if (perfErrors > 0) {
+                                result.status = 'failed';
+                                result.details = `Stability Issue: Endpoint threw ${perfErrors} crashes under stress.`;
+                            } else {
+                                result.status = 'passed';
+                                result.details = `Average latency is ${avgLatency}ms (passes < 500ms baseline).`;
+                            }
+                        } else {
+                            if (status >= 200 && status < 300) {
+                                result.status = 'passed';
+                                result.details = `Success: Returned HTTP ${status} in ${reqElapsed}ms.`;
+                            } else {
+                                result.status = 'failed';
+                                result.details = `Failed validation: Got HTTP status ${status} (${resData.status_text || 'Error'}).`;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    result.status = 'failed';
+                    result.details = `Execution crash: ${e.message}`;
+                }
+
+                if (result.status === 'passed') {
+                    passedCount++;
+                    logToQaTerminal('success', `[PASS] ${result.details}`);
+                } else {
+                    failedCount++;
+                    logToQaTerminal('error', `[FAIL] ${result.details}`);
+                }
+                
+                executionResults.push(result);
+            }
+
+            // Post-run statistics completion
+            document.getElementById('qa-progress-bar').style.width = `100%`;
+            document.getElementById('metric-total').textContent = `${totalSteps}`;
+            document.getElementById('metric-passed').textContent = `${passedCount}`;
+            document.getElementById('metric-failed').textContent = `${failedCount}`;
+            const finalRate = Math.round((passedCount / totalSteps) * 100);
+            document.getElementById('metric-rate').textContent = `${finalRate}%`;
+            document.getElementById('qa-run-status').textContent = "Execution Complete";
+
+            logToQaTerminal('info', `\n=========================================`);
+            logToQaTerminal('info', `🏁 EXECUTION COMPLETE`);
+            logToQaTerminal('info', `Passed: ${passedCount} | Failed: ${failedCount} | Rate: ${finalRate}%`);
+            logToQaTerminal('info', `=========================================`);
+            logToQaTerminal('info', `Compiling final execution report...`);
+
+            // Generate report markdown
+            showLoader(false);
+            setQaRightTab('report');
+            const viewer = document.getElementById('qa-report-viewer');
+            viewer.innerHTML = `
+                <div class="flex items-center gap-3 pb-2 border-b border-t-border mb-4">
+                    <span class="text-xl animate-pulse">📊</span>
+                    <div>
+                        <h1 class="text-xs font-bold text-t-text uppercase tracking-wider">Compiling API Test Report</h1>
+                        <p class="text-[9px] text-t-muted">AI Lead Analyst is compiling execution results...</p>
+                    </div>
+                </div>
+                <div class="border border-t-border bg-t-panel/30 rounded-xl p-4 markdown-body select-text text-t-text" id="qa-live-markdown-container">
+                    <p class="text-xs italic text-t-muted">Awaiting stream connection...</p>
+                </div>
+            `;
+            
+            try {
+                const repResp = await fetch('/generate-test-report/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ results: executionResults })
+                });
+                
+                const reader = repResp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let accumulatedMarkdown = "";
+                
+                const markdownContainer = document.getElementById('qa-live-markdown-container');
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
+                    
+                    for (let line of lines) {
+                        line = line.trim();
+                        if (line.startsWith("data: ")) {
+                            try {
+                                const event = JSON.parse(line.slice(6));
+                                if (event.type === 'status') {
+                                    logToQaTerminal('info', `\n[Report Compiler] ${event.message}`);
+                                } else if (event.type === 'token') {
+                                    accumulatedMarkdown += event.content;
+                                    markdownContainer.innerHTML = marked.parse(accumulatedMarkdown);
+                                } else if (event.type === 'final_report') {
+                                    qaReportMarkdown = event.report_markdown;
+                                    renderReportVisual(event);
+                                    
+                                    logToQaTerminal('info', `\n[AI API CALL] POST ${event.ai_request_url}`);
+                                    logToQaTerminal('info', `[REQUEST BODY]\n${JSON.stringify(event.ai_request_body, null, 2)}`);
+                                    logToQaTerminal('info', `\n[RESPONSE BODY]\n${JSON.stringify(event.ai_response_body, null, 2)}`);
+                                    logToQaTerminal('info', `-----------------------------------------\n`);
+                                }
+                            } catch (e) {
+                                console.error("Error parsing report SSE event", e);
+                            }
+                        }
+                    }
+                }
+                
+                const reportTabBtn = document.getElementById('qa-tab-btn-report');
+                reportTabBtn.disabled = false;
+                logToQaTerminal('success', `✓ AI test report compilation completed.`);
+            } catch (err) {
+                logToQaTerminal('error', `Report compilation failed: ${err.message}`);
+            } finally {
+                setQaRunButtonsDisabled(false);
+            }
+        }
+
+        function renderReportVisual(data) {
+            const viewer = document.getElementById('qa-report-viewer');
+            viewer.innerHTML = '';
+
+            const summary = data.summary;
+            const progressColor = summary.success_rate >= 80 ? 'text-t-accent bg-t-accent/10 border-t-accent/20' : summary.success_rate >= 50 ? 'text-amber-500 bg-amber-500/10 border-amber-500/20' : 'text-red-500 bg-red-500/10 border-red-500/20';
+            
+            const headingDiv = document.createElement('div');
+            headingDiv.className = 'space-y-4';
+            headingDiv.innerHTML = `
+                <div class="flex items-center gap-3 pb-2 border-b border-t-border">
+                    <span class="text-xl">📊</span>
+                    <div>
+                        <h1 class="text-xs font-bold text-t-text uppercase tracking-wider">API Test Execution Report</h1>
+                        <p class="text-[9px] text-t-muted">COMPILED DYNAMICALLY BY QA AUTOMATION ENGINEER AI</p>
+                    </div>
+                </div>
+
+                <!-- Executive Summary Cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="border border-t-border rounded-xl p-3 bg-t-panel/40">
+                        <div class="text-[9px] uppercase tracking-wider text-t-muted mb-1">Pass Ratio</div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-lg font-bold ${progressColor.split(' ')[0]}">${summary.success_rate}%</span>
+                            <span class="text-[9px] text-t-dimmed">(${summary.passed}/${summary.total} run)</span>
+                        </div>
+                    </div>
+                    <div class="border border-t-border rounded-xl p-3 bg-t-panel/40">
+                        <div class="text-[9px] uppercase tracking-wider text-t-muted mb-1">Status Summary</div>
+                        <div class="flex items-baseline gap-3 text-[11px]">
+                            <span class="text-t-accent font-semibold">${summary.passed} Passed</span>
+                            <span class="text-red-500 font-semibold">${summary.failed} Failed</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            viewer.appendChild(headingDiv);
+
+            // Group by test type
+            const byType = {};
+            executionResults.forEach(r => {
+                if (!byType[r.test_type]) byType[r.test_type] = [];
+                byType[r.test_type].push(r);
+            });
+
+            // Detailed Breakdown
+            const breakdownSection = document.createElement('div');
+            breakdownSection.className = 'space-y-3 pt-2';
+            breakdownSection.innerHTML = `<h2 class="text-[11px] font-bold uppercase tracking-wider text-t-cyan border-b border-t-border/50 pb-1 flex items-center gap-1"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg> Detailed Breakdown</h2>`;
+            
+            for (let testType in byType) {
+                const typeCard = document.createElement('div');
+                typeCard.className = 'border border-t-border rounded-xl p-3 bg-t-panel/20 space-y-2';
+                typeCard.innerHTML = `<h3 class="text-[10px] font-semibold text-t-text uppercase tracking-wider border-b border-t-border-subtle pb-1">${testType}s</h3>`;
+                
+                const list = document.createElement('div');
+                list.className = 'space-y-1.5';
+                
+                byType[testType].forEach(r => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-start justify-between text-xs gap-3 p-1.5 rounded bg-t-panel/40 border border-t-border-subtle';
+                    
+                    const mColors = { GET:'text-t-cyan', POST:'text-t-accent', PUT:'text-amber-500', DELETE:'text-red-500' };
+                    const mc = mColors[r.method] || 'text-t-muted';
+                    const badge = r.status === 'passed' 
+                        ? `<span class="text-[8px] text-t-accent bg-t-accent/10 border border-t-accent/25 px-1.5 py-0.2 rounded font-semibold shrink-0">PASS</span>` 
+                        : `<span class="text-[8px] text-red-500 bg-red-500/10 border border-red-500/25 px-1.5 py-0.2 rounded font-semibold shrink-0">FAIL</span>`;
+                    
+                    row.innerHTML = `
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-1.5 font-mono mb-0.5">
+                                <span class="${mc} font-bold text-[9px]">${r.method}</span>
+                                <span class="text-t-text truncate font-semibold text-[10px]">${r.endpoint}</span>
+                            </div>
+                            <div class="text-[10px] text-t-muted leading-relaxed">${r.details}</div>
+                        </div>
+                        ${badge}
+                    `;
+                    list.appendChild(row);
+                });
+                
+                typeCard.appendChild(list);
+                breakdownSection.appendChild(typeCard);
+            }
+            viewer.appendChild(breakdownSection);
+
+            // AI Lead Analyst Markdown Report rendering
+            if (data.report_markdown) {
+                const aiReportDiv = document.createElement('div');
+                aiReportDiv.className = 'border border-t-border bg-t-panel/30 rounded-xl p-4 space-y-3 markdown-body';
+                const parsedHtml = marked.parse(data.report_markdown);
+                
+                aiReportDiv.innerHTML = `
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-t-cyan flex items-center gap-1.5 border-b border-t-border/50 pb-2 mb-2 select-none">
+                        <svg class="w-3.5 h-3.5 text-t-cyan animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364.364l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        AI Lead Analyst Report
+                    </h2>
+                    <div class="text-t-text leading-relaxed select-text space-y-3">
+                        ${parsedHtml}
+                    </div>
+                `;
+                viewer.appendChild(aiReportDiv);
+            }
+        }
+
+        // ── QA Credentials Prompt Modal functions ─────────────────────────────
+        function openQaAuthDialog() {
+            const overlay = document.getElementById('qa-auth-overlay');
+            overlay.classList.remove('hidden');
+            
+            const globalType = document.getElementById('global-auth-type')?.value || 'none';
+            const modalSelect = document.getElementById('modal-auth-type');
+            modalSelect.value = globalType;
+            toggleModalAuthFields();
+            
+            if (globalType === 'bearer') {
+                const token = document.getElementById('global-auth-bearer-token')?.value || '';
+                const modalInput = document.getElementById('modal-auth-bearer-token');
+                if (modalInput) modalInput.value = token;
+            } else if (globalType === 'basic') {
+                const u = document.getElementById('global-auth-basic-username')?.value || '';
+                const p = document.getElementById('global-auth-basic-password')?.value || '';
+                const modalUser = document.getElementById('modal-auth-basic-username');
+                const modalPass = document.getElementById('modal-auth-basic-password');
+                if (modalUser) modalUser.value = u;
+                if (modalPass) modalPass.value = p;
+            } else if (globalType === 'apikey') {
+                const n = document.getElementById('global-auth-apikey-name')?.value || '';
+                const v = document.getElementById('global-auth-apikey-val')?.value || '';
+                const modalName = document.getElementById('modal-auth-apikey-name');
+                const modalVal = document.getElementById('modal-auth-apikey-val');
+                if (modalName) modalName.value = n;
+                if (modalVal) modalVal.value = v;
+            }
+        }
+        
+        function closeQaAuthDialog() {
+            document.getElementById('qa-auth-overlay').classList.add('hidden');
+        }
+
+        function toggleModalAuthFields() {
+            const select = document.getElementById('modal-auth-type');
+            const container = document.getElementById('modal-auth-fields-container');
+            const type = select.value;
+            container.innerHTML = '';
+            
+            const inputClass = "w-full bg-t-panel border border-t-border rounded-lg text-xs text-t-cyan placeholder-t-faint py-2 px-3 focus:outline-none focus:border-t-cyan transition-colors duration-75 font-mono";
+            
+            if (type === 'bearer') {
+                container.innerHTML = `
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-t-muted uppercase tracking-wider font-semibold">Bearer Token</label>
+                        <input type="text" id="modal-auth-bearer-token" placeholder="Bearer Token" class="${inputClass}">
+                    </div>
+                `;
+            } else if (type === 'basic') {
+                container.innerHTML = `
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-t-muted uppercase tracking-wider font-semibold">Username</label>
+                        <input type="text" id="modal-auth-basic-username" placeholder="Username" class="${inputClass}">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-t-muted uppercase tracking-wider font-semibold">Password</label>
+                        <input type="password" id="modal-auth-basic-password" placeholder="Password" class="${inputClass}">
+                    </div>
+                `;
+            } else if (type === 'apikey') {
+                container.innerHTML = `
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-t-muted uppercase tracking-wider font-semibold">API Key Name</label>
+                        <input type="text" id="modal-auth-apikey-name" value="X-API-Key" class="${inputClass}">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-[10px] text-t-muted uppercase tracking-wider font-semibold">API Key Value</label>
+                        <input type="text" id="modal-auth-apikey-val" placeholder="API Key Value" class="${inputClass}">
+                    </div>
+                `;
+            }
+        }
+
+        function runSuiteWithModalAuth(skip = false) {
+            closeQaAuthDialog();
+            
+            if (!skip) {
+                const type = document.getElementById('modal-auth-type').value;
+                const globalSelect = document.getElementById('global-auth-type');
+                globalSelect.value = type;
+                globalSelect.dispatchEvent(new Event('change'));
+                
+                if (type === 'bearer') {
+                    const token = document.getElementById('modal-auth-bearer-token')?.value || '';
+                    const globalInput = document.getElementById('global-auth-bearer-token');
+                    if (globalInput) globalInput.value = token;
+                } else if (type === 'basic') {
+                    const user = document.getElementById('modal-auth-basic-username')?.value || '';
+                    const pass = document.getElementById('modal-auth-basic-password')?.value || '';
+                    const globalUser = document.getElementById('global-auth-basic-username');
+                    const globalPass = document.getElementById('global-auth-basic-password');
+                    if (globalUser) globalUser.value = user;
+                    if (globalPass) globalPass.value = pass;
+                } else if (type === 'apikey') {
+                    const name = document.getElementById('modal-auth-apikey-name')?.value || '';
+                    const val = document.getElementById('modal-auth-apikey-val')?.value || '';
+                    const globalName = document.getElementById('global-auth-apikey-name');
+                    const globalVal = document.getElementById('global-auth-apikey-val');
+                    if (globalName) globalName.value = name;
+                    if (globalVal) globalVal.value = val;
+                }
+            }
+            
+            executeAutomationTestSuite(true);
+        }
+
+        function copyQaReportMarkdown() {
+            if (!qaReportMarkdown) return;
+            navigator.clipboard.writeText(qaReportMarkdown);
+            alert('Test Report Markdown copied to clipboard.');
+        }
+
+        function downloadQaReportMarkdown() {
+            if (!qaReportMarkdown) return;
+            const blob = new Blob([qaReportMarkdown], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentApiSpec?.title?.toLowerCase()?.replace(/[^a-z0-9]/g, '_')}_test_report.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
     </script>
+    {% endverbatim %}
 </body>
 </html>

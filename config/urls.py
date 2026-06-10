@@ -22,7 +22,12 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.landing_view, name='landing'),
     path('console/', views.dashboard_view, name='dashboard'),
+    path('console/qa/', views.qa_suite_view, name='qa_suite'),
     path('about/', views.about_view, name='about'),
     path('parse-swagger/', views.parse_swagger, name='parse_swagger'),
     path('proxy-request/', views.proxy_request, name='proxy_request'),
+    path('generate-ai-ui/', views.generate_ai_ui, name='generate_ai_ui'),
+    path('analyze-auth/', views.analyze_auth, name='analyze_auth'),
+    path('generate-test-plan/', views.generate_test_plan, name='generate_test_plan'),
+    path('generate-test-report/', views.generate_test_report, name='generate_test_report'),
 ]
