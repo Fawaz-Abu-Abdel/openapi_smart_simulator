@@ -159,8 +159,32 @@
                 </div>
             </div>
 
+            <div class="lg:col-span-2 border border-t-border bg-t-panel p-5 relative overflow-hidden flex flex-col justify-between min-h-[220px]">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
+                        <span class="text-xs text-t-cyan font-bold" data-i18n="card1Header">SYS_IDENTITY_PROMPT</span>
+                        <span class="text-[10px] text-t-muted">ONLINE</span>
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-4 items-start">
+                        <div class="w-16 h-16 shrink-0 border border-t-accent rounded flex items-center justify-center font-bold text-lg text-t-accent shadow-[0_0_8px_var(--accent-glow)] select-none">
+                            A.A.
+                        </div>
+                        <div class="space-y-1">
+                            <h2 class="text-base text-t-accent font-bold" data-i18n="name_aymen">Aymen Alsuhaiqi</h2>
+                            <p class="text-xs text-t-text leading-relaxed" data-i18n="aboutText">
+                                Backend Software Engineer & Engineering Lead specializing in high-throughput, secure microservices, Identity & Access Management (IAM), SSO, and advanced database schema optimization. Driven by building production-grade backend systems and developer utilities.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t border-t-border-subtle pt-3 mt-4 flex items-center justify-between text-[11px] text-t-muted">
+                    <span data-i18n="statusFinger_aymen">finger: aymen active</span>
+                    <span>ip: 127.0.0.1</span>
+                </div>
+            </div>
+
             <!-- Card 2: The Stack Matrix -->
-            <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[220px]">
+            <!-- <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[220px]">
                 <div class="space-y-3">
                     <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
                         <span class="text-xs text-t-cyan font-bold">$ cat skills.json</span>
@@ -183,10 +207,10 @@
                 <div class="text-[10px] text-t-muted border-t border-t-border-subtle pt-2 mt-4 font-mono select-none">
                     { "stack": "compiled", "status": "optimized" }
                 </div>
-            </div>
+            </div> -->
 
             <!-- Card 3: Philosophy Card -->
-            <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
+            <!-- <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
                 <div class="space-y-3">
                     <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
                         <span class="text-xs text-t-cyan font-bold" data-i18n="card3Header">SYS_MISSION_STATEMENT</span>
@@ -198,17 +222,16 @@
                 <div class="text-[10px] text-t-accent mt-4 select-none">
                     [ // ARCHITECTURAL_PHILOSOPHY ]
                 </div>
-            </div>
+            </div> -->
 
             <!-- Card 4: Production Ledger -->
-            <div class="md:col-span-2 border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
+            <!-- <div class="md:col-span-2 border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
                 <div class="space-y-4">
                     <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
                         <span class="text-xs text-t-cyan font-bold" data-i18n="timelineHeader">PROD_EXPERIENCE_LEDGER</span>
                         <span class="text-[10px] text-t-muted">v1.2.0</span>
                     </div>
                     <div class="space-y-4">
-                        <!-- Step 1 -->
                         <div class="relative ps-6 border-s border-t-border-subtle space-y-1">
                             <span class="absolute -start-1.5 top-1 w-3 h-3 rounded-full bg-t-accent border border-t-bg shadow-[0_0_6px_var(--accent-glow)]"></span>
                             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -224,7 +247,6 @@
                             </div>
                         </div>
 
-                        <!-- Step 2 -->
                         <div class="relative ps-6 border-s border-t-border-subtle space-y-1">
                             <span class="absolute -start-1.5 top-1 w-3 h-3 rounded-full bg-t-accent border border-t-bg"></span>
                             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -241,10 +263,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
 
             <!-- Card 5: System Interlink Footer -->
-            <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
+            <!-- <div class="border border-t-border bg-t-panel p-5 flex flex-col justify-between min-h-[200px]">
                 <div class="space-y-4">
                     <div class="flex items-center justify-between border-b border-t-border-subtle pb-2">
                         <span class="text-xs text-t-cyan font-bold" data-i18n="interlinkHeader">SYSTEM_INTERLINK</span>
@@ -263,7 +285,7 @@
                 <a href="/console/" class="w-full text-center border border-t-border hover:border-t-accent text-t-muted hover:text-t-accent py-2 text-xs font-bold transition-all duration-75 hover:shadow-[0_0_12px_var(--accent-glow)] active:scale-95 block mt-4" data-i18n="launchConsole">
                     [ LAUNCH_CONSOLE ]
                 </a>
-            </div>
+            </div> -->
 
         </div>
     </main>
@@ -291,8 +313,10 @@
                 navQa: "QA Suite",
                 card1Header: "SYS_IDENTITY_PROMPT",
                 name: "Fawaz Abu Abdel",
+                name_aymen: "Aymen Alsuhaiqi",
                 aboutText: "Backend Software Engineer & Engineering Lead specializing in high-throughput, secure microservices, Identity & Access Management (IAM), SSO, and advanced database schema optimization. Driven by building production-grade backend systems and developer utilities.",
                 statusFinger: "finger: fawaz active",
+                statusFinger_aymen: "finger: aymen active",
                 stackBackend: "Backend:",
                 stackDatabase: "Database:",
                 stackArchitecture: "Architecture:",
@@ -317,8 +341,10 @@
                 navQa: "بيئة الفحص الالي",
                 card1Header: "توجيه_هوية_النظام",
                 name: "فواز أبو عبدل",
+                name_aymen: "أيمن السحيقي",
                 aboutText: "مهندس برمجيات واجهات خلفية (Backend) وقائد هندسي متخصص في بناء الخدمات المصغّرة عالية الإنتاجية والآمنة، وأنظمة إدارة الهوية والوصول (IAM)، وخدمات تسجيل الدخول الموحد (SSO)، وتحسين قواعد البيانات المتقدمة. شغوف ببناء أنظمة خلفية للإنتاج الفعلي وأدوات احترافية للمطورين.",
                 statusFinger: "finger: فواز نشط",
+                statusFinger_aymen: "finger: ايمن نشط",
                 stackBackend: "تطوير الواجهة الخلفية:",
                 stackDatabase: "قواعد البيانات:",
                 stackArchitecture: "هيكلية النظام:",
