@@ -1,3 +1,5 @@
 from django.contrib import admin
+from simulator.models import *
 
-# Register your models here.
+admin.site.register(ScannedHistory)
+admin.site.register(SiteStats)
